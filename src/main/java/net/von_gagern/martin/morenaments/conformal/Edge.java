@@ -33,8 +33,7 @@ class Edge {
 
     public Point2D getCenter() {
         if (center == null)
-            center = new Point2D.Double((p1.getX() + p2.getX())/2.,
-                                        (p1.getY() + p2.getY())/2.);
+            center = createCenter();
         return center;
     }
 
@@ -58,6 +57,11 @@ class Edge {
             assert endpoint == p2;
             return getSecondPart();
         }
+    }
+
+    protected Point2D createCenter() {
+        return new Point2D.Double((p1.getX() + p2.getX())/2.,
+                                  (p1.getY() + p2.getY())/2.);
     }
 
     protected Edge createFirstPart() {

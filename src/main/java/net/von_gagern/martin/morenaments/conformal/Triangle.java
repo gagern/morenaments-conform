@@ -3,8 +3,9 @@ package net.von_gagern.martin.morenaments.conformal;
 import java.awt.geom.Point2D;
 import java.util.Arrays;
 import java.util.List;
+import net.von_gagern.martin.cetm.mesh.CorneredTriangle;
 
-class Triangle {
+class Triangle implements CorneredTriangle<Point2D> {
 
     private List<Point2D> vs;
 
@@ -22,6 +23,10 @@ class Triangle {
 
     public List<Point2D> vertices() {
         return vs;
+    }
+
+    public Point2D getCorner(int i) {
+        return vs.get(i);
     }
 
 }
