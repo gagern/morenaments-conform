@@ -14,6 +14,7 @@ class AdaptiveEdgeSubdivision extends MeshCreator {
     protected Collection<Triangle> createMesh(Triangle t) {
         int targetCount = getTargetTriangleCount();
         triangles = new ArrayList<Triangle>();
+        triangles.add(t);
         q = new PriorityQueue(targetCount*3, new EdgeLengthComparator());
         for (Edge e: t.edges()) q.add(e);
         while (triangles.size() < targetCount)
