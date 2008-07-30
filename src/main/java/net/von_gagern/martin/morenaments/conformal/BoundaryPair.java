@@ -1,3 +1,5 @@
+package net.von_gagern.martin.morenaments.conformal;
+
 class BoundaryPair {
 
     private Boundary b1, b2;

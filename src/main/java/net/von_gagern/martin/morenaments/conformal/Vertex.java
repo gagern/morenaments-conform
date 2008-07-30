@@ -1,3 +1,5 @@
+package net.von_gagern.martin.morenaments.conformal;
+
 import java.awt.geom.Point2D;
 
 class Vertex extends Point2D.Double implements Comparable<Vertex> {
