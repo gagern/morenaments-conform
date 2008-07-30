@@ -33,6 +33,8 @@ public class SvgMeshWriter {
 
     private double inset = 5;
 
+    private double scale = 1;
+
     public SvgMeshWriter(OutputStream out) throws XMLStreamException {
         encoding = "UTF-8";
         XMLOutputFactory factory = XMLOutputFactory.newInstance();
@@ -55,9 +57,13 @@ public class SvgMeshWriter {
         this.inset = inset;
     }
 
+    public void setScale(double scale) {
+        this.scale = scale;
+    }
+
     public void writeMesh(Mesh2D mesh) throws XMLStreamException {
         Shape boundary = mesh.getBoundary();
-        head(boundary.getBounds());
+        head(boundary.getBounds2D());
         interiorEdges(mesh.getInteriorEdges());
         boundary(boundary);
         tail();
@@ -79,6 +85,7 @@ public class SvgMeshWriter {
         svg.writeAttribute("width", w);
         svg.writeAttribute("height", h);
         svg.writeAttribute("viewBox", viewBox);
+        svg.writeAttribute("fill", "none");
     }
 
     private void interiorEdges(Collection<? extends Line2D> edges)
@@ -155,7 +162,7 @@ public class SvgMeshWriter {
     }
 
     private String format(double d) {
-        return Double.toString(d);
+        return Double.toString(d*scale);
     }
 
 }

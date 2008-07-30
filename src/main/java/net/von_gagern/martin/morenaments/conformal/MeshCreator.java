@@ -24,6 +24,7 @@ abstract class MeshCreator {
         Edge e23 = hypEdge(p2, p3);
         Edge e31 = hypEdge(p3, p1);
         Triangle t = new Triangle(p1, p2, p3, e23, e31, e12);
+        for (Edge e: t.edges()) e.setLeft(t);
         return new Mesh2D(createMesh(t));
     }
 

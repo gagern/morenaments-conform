@@ -72,7 +72,16 @@
       <artifactId>cetm</artifactId>
       <version>1.0-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>net.von-gagern.martin</groupId>
+      <artifactId>getopt</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
   </dependencies>
+
+  <properties>
+    <main.class>net.von_gagern.martin.morenaments.conformal.CommandLine</main.class>
+  </properties>
 
   <build>
 
@@ -98,6 +107,7 @@
 	  <archive>
 	    <manifest>
 	      <addClasspath>true</addClasspath>
+	      <mainClass>${main.class}</mainClass>
 	    </manifest>
 	  </archive>
 	</configuration>
