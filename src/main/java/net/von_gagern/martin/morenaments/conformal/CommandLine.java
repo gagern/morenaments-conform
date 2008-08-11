@@ -12,10 +12,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.xml.stream.XMLStreamException;
-import net.von_gagern.martin.cetm.conformal.Conformal;
-import net.von_gagern.martin.cetm.mesh.Mesh2D;
-import net.von_gagern.martin.cetm.mesh.MeshException;
-import net.von_gagern.martin.cetm.mesh.Vertex2D;
+import net.von_gagern.martin.confoo.conformal.Conformal;
+import net.von_gagern.martin.confoo.mesh.flat.Mesh2D;
+import net.von_gagern.martin.confoo.mesh.MeshException;
+import net.von_gagern.martin.confoo.mesh.flat.Vertex2D;
 import net.von_gagern.martin.getopt.OptException;
 import net.von_gagern.martin.getopt.OptPair;
 import net.von_gagern.martin.getopt.OptParser;
@@ -102,8 +102,7 @@ public class CommandLine {
         writeOut(mesh, hypOut);
         Conformal conformal = Conformal.getInstance(mesh);
         conformal.fixedBoundaryCurvature(angles);
-        conformal.transform();
-        mesh = new Mesh2D(conformal.getMesh());
+        mesh = new Mesh2D(conformal.transform());
         writeOut(mesh, eucOut);
     }
 

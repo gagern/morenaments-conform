@@ -69,8 +69,8 @@
     </dependency>
     <dependency>
       <groupId>net.von-gagern.martin</groupId>
-      <artifactId>cetm</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <artifactId>confoo</artifactId>
+      <version>1.0</version>
     </dependency>
     <dependency>
       <groupId>net.von-gagern.martin</groupId>
@@ -132,6 +132,7 @@
 	    <link>http://www.math.tu-berlin.de/jtem/numericalMethods/api</link>
 	    <link>http://www.math.tu-berlin.de/jtem/function/api</link>
 	    <link>http://junit.sourceforge.net/javadoc_40/</link>
+	    <link>http://martin.von-gagern.net/javadoc/net.von-gagern.martin:confoo:1.0/</link>
 	  </links>
 	</configuration>
       </plugin>

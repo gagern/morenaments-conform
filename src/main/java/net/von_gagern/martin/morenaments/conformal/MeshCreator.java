@@ -3,7 +3,7 @@ package net.von_gagern.martin.morenaments.conformal;
 import java.awt.geom.Point2D;
 import java.util.Collection;
 import de.tum.in.gagern.hornamente.PoincareLine;
-import net.von_gagern.martin.cetm.mesh.Mesh2D;
+import net.von_gagern.martin.confoo.mesh.flat.Mesh2D;
 
 abstract class MeshCreator {
 

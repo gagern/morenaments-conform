@@ -10,7 +10,7 @@ import java.util.Collection;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import net.von_gagern.martin.cetm.mesh.Mesh2D;
+import net.von_gagern.martin.confoo.mesh.flat.Mesh2D;
 
 public class SvgMeshWriter {
 

@@ -3,7 +3,7 @@ package net.von_gagern.martin.morenaments.conformal;
 import java.awt.geom.Point2D;
 import java.util.Arrays;
 import java.util.List;
-import net.von_gagern.martin.cetm.mesh.CorneredTriangle;
+import net.von_gagern.martin.confoo.mesh.CorneredTriangle;
 
 class Triangle implements CorneredTriangle<Point2D> {
 
