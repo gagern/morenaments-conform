@@ -1,4 +1,4 @@
-package net.von_gagern.martin.morenaments.conformal;
+package net.von_gagern.martin.morenaments.conformal.triangulate;
 
 import net.von_gagern.martin.getopt.OptArg;
 import net.von_gagern.martin.getopt.OptKey;

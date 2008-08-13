@@ -1,4 +1,4 @@
-package net.von_gagern.martin.morenaments.conformal;
+package net.von_gagern.martin.morenaments.conformal.triangulate;
 
 import java.io.*;
 import java.util.zip.GZIPOutputStream;
