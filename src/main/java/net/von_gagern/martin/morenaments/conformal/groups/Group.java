@@ -50,4 +50,32 @@ public abstract class Group {
         return new P6m();
     }
 
+    public static P6 p6() {
+        return new P6();
+    }
+
+    public static P31m p31m() {
+        return new P31m();
+    }
+
+    public static P3m1 p3m1() {
+        return new P3m1();
+    }
+
+    public static P3 p3() {
+        return new P3();
+    }
+
+    public static P4g p4g() {
+        return new P4g();
+    }
+
+    public static P4m p4m() {
+        return new P4m();
+    }
+
+    public static P4 p4() {
+        return new P4();
+    }
+
 }

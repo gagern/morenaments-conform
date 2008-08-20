@@ -7,7 +7,7 @@ abstract class RotatedKite extends Kite {
     }
 
     private static final String[] GENERATOR_STRINGS =
-        { "bc", "cb", "ac", "ca" };
+        { "ac", "bc", "ca", "cb" };
 
     public String[] getGeneratorStrings() {
         return GENERATOR_STRINGS;

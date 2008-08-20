@@ -7,10 +7,15 @@ abstract class ReflectedKite extends Kite {
     }
 
     private static final String[] GENERATOR_STRINGS =
-        { "b", "cbc", "ac", "ca" };
+        { "ac", "b", "ca", "cbc" };
 
     public String[] getGeneratorStrings() {
         return GENERATOR_STRINGS;
+    }
+
+    @Override protected FundamentalTriangle constructTriangle() {
+        return new FundamentalTriangle(hyperbolicAngles[0]*2,
+                                       hyperbolicAngles[1], 2);
     }
 
 }

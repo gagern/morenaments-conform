@@ -35,9 +35,8 @@ public class TilingRenderer {
         HypTrafo id = HypTrafo.getIdentity();
         for (int i = 0; i < 8; ++i)
             t[i][0] = id;
-        violationStatistics = new int[1024];
+        violationStatistics = new int[4*r];
         for (int i = 0; i < r; ++i) {
-            System.out.println("major: " + i);
             // We render eight octants by eight calls           major, minor
             renderMinor(t[0],  i  ,    0,  0,  1, i  ); // +x, +y
             renderMinor(t[1],    0,  i  ,  1,  0, i+1); // +y, +x
@@ -95,7 +94,7 @@ public class TilingRenderer {
             if (violated == -1) return t;
         }
         t = t.clone();
-        for (int i = 0; i < 128; ++i) {
+        for (int i = 0; i < violationStatistics.length; ++i) {
             if (debug)
                 System.out.println("t = " + t + " * " + generators[violated]);
             t.concatenate(generators[violated]);

@@ -11,7 +11,7 @@ abstract class Kite extends ReflectionBasedGroup {
     protected HypTrafo[] constructInsidenessChecks() {
         ensureFundamentalTriangle();
         HypTrafo[] res = new HypTrafo[4];
-        HypTrafo c = fundamentalTriangle.getEdgeInsideness(2);
+        HypTrafo c = fundamentalTriangle.getReflection(2);
         res[0] = fundamentalTriangle.getEdgeInsideness(0);
         res[1] = fundamentalTriangle.getEdgeInsideness(1);
         res[2] = res[0].clone().concatenate(c);
