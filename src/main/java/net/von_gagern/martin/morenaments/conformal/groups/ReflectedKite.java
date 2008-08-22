@@ -18,4 +18,18 @@ abstract class ReflectedKite extends Kite {
                                        hyperbolicAngles[1], 2);
     }
 
+    public double getEuclideanCornerAngle(int index) {
+        switch(index) {
+        case 0: // corner A of the triangle
+            return Math.PI/euclideanAngles[0];
+        case 2: // corner B of the triangle
+            return 2.*Math.PI/euclideanAngles[1];
+        case 3: // corner C of the triangle
+        case 1: // corner C of the reflected triangle
+            return Math.PI/2;
+        default:
+            throw new IndexOutOfBoundsException();
+        }
+    }
+
 }

@@ -6,4 +6,12 @@ class EdgeLengthComparator extends ReverseDoubleComparator<Edge> {
         return e.lengthSq();
     }
 
+    private static EdgeLengthComparator instance;
+
+    public static synchronized EdgeLengthComparator getInstance() {
+        if (instance == null)
+            instance = new EdgeLengthComparator();
+        return instance;
+    }
+
 }
