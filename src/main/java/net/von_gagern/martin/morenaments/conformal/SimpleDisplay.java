@@ -47,12 +47,13 @@ class SimpleDisplay extends JPanel {
 
     @Override public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        int r = Math.min(getWidth(), getHeight())/2;
-        if (osi == null || osi.getWidth() != 2*r || osi.getHeight() != 2*r) {
-            osi = acceleratedImage(2*r, 2*r, g);
-            tr.render(r, osi);
+        int size = Math.min(getWidth(), getHeight());
+        size -= size & 1;
+        if (osi == null || osi.getWidth() != size || osi.getHeight() != size) {
+            osi = acceleratedImage(size, size, g);
+            tr.render(size, osi);
         }
-        g.drawImage(osi, getWidth()/2 - r, getHeight()/2 - r, this);
+        g.drawImage(osi, (getWidth() - size)/2, (getHeight() - size)/2, this);
     }
 
     private BufferedImage acceleratedImage(int width, int height, Graphics g) {

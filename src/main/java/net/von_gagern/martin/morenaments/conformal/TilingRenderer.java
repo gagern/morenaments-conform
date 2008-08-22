@@ -23,10 +23,10 @@ public class TilingRenderer {
         generators = group.getGenerators();
     }
 
-    public BufferedImage render(int radius, BufferedImage target) {
-        this.r = radius;
+    public BufferedImage render(int size, BufferedImage target) {
+        this.r = size / 2;
         this.target = target;
-        int size = r*2;
+        size = r*2;
         if (target == null ||
             target.getWidth() != size || target.getHeight() != size) {
             target = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
