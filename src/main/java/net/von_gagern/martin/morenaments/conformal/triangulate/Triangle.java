@@ -6,7 +6,7 @@ import java.util.List;
 import net.von_gagern.martin.confoo.mesh.CorneredTriangle;
 import net.von_gagern.martin.morenaments.conformal.Mat3x3R;
 
-class Triangle implements CorneredTriangle<Point2D> {
+public class Triangle implements CorneredTriangle<Point2D> {
 
     private List<Point2D> vs;
 

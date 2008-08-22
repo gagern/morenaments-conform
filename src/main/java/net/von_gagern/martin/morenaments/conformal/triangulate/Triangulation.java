@@ -12,7 +12,7 @@ import java.util.Set;
 import de.tum.in.gagern.hornamente.PoincareLine;
 import net.von_gagern.martin.confoo.mesh.LocatedMesh;
 
-class Triangulation
+public class Triangulation
     extends AbstractList<Triangle>
     implements LocatedMesh<Point2D>
 {

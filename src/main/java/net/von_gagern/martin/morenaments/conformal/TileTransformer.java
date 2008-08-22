@@ -1,4 +1,4 @@
-package net.von_gagern.martin.morenaments.conformal.triangulate;
+package net.von_gagern.martin.morenaments.conformal;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
@@ -17,7 +17,8 @@ import net.von_gagern.martin.confoo.conformal.ResultMesh;
 import net.von_gagern.martin.confoo.mesh.LocatedMesh;
 import net.von_gagern.martin.confoo.mesh.MeshException;
 import net.von_gagern.martin.morenaments.conformal.groups.Group;
-import net.von_gagern.martin.morenaments.conformal.Mat3x3R;
+import net.von_gagern.martin.morenaments.conformal.triangulate.Triangle;
+import net.von_gagern.martin.morenaments.conformal.triangulate.Triangulation;
 
 public class TileTransformer implements Runnable {
 
