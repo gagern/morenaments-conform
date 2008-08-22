@@ -1,6 +1,7 @@
 package net.von_gagern.martin.morenaments.conformal.groups;
 
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 import java.util.List;
 import de.tum.in.gagern.hornamente.HypTrafo;
 
@@ -49,6 +50,17 @@ public abstract class Group {
     protected abstract HypTrafo[] constructInsidenessChecks();
 
     public abstract List<Point2D> getHypTileCorners();
+
+    public List<Point2D> getEucTileCorners() {
+        double[] coords = getEucCornerCoordinates();
+        assert coords.length % 2 == 0;
+        List<Point2D> corners = new ArrayList<Point2D>(coords.length / 2);
+        for (int i = 0; i < coords.length; i += 2)
+            corners.add(new Point2D.Double(coords[i], coords[i + 1]));
+        return corners;
+    }
+
+    protected abstract double[] getEucCornerCoordinates();
 
     public abstract double getEuclideanCornerAngle(int index);
 
