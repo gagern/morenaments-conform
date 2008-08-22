@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import de.tum.in.gagern.hornamente.Vec2C;
+import de.tum.in.gagern.hornamente.Vec3R;
 import net.von_gagern.martin.confoo.conformal.Conformal;
 import net.von_gagern.martin.confoo.conformal.ResultMesh;
 import net.von_gagern.martin.confoo.mesh.LocatedMesh;
@@ -24,6 +25,10 @@ public class TileTransformer implements Runnable {
 
     private Triangulation hypMesh;
 
+    private Triangle centerTriangle;
+
+    private Triangle lastUsedTriangle;
+
     public TileTransformer(Group group) {
         this.g = group;
     }
@@ -33,6 +38,7 @@ public class TileTransformer implements Runnable {
         List<Point2D> hypCorners = g.getHypTileCorners();
         hypMesh = new Triangulation();
         hypMesh.triangulatePoincare(hypCorners);
+        lastUsedTriangle = centerTriangle = findCenter(hypMesh, hypCorners);
 
         // Transform mesh to euclidean shape using discrete conformal map
         Conformal c = Conformal.getInstance(hypMesh);
@@ -70,6 +76,24 @@ public class TileTransformer implements Runnable {
             Mat3x3R m = affine.multiply(eucTriple).multiply(diag)
                               .multiply(hypTriple.getInverse());
             t.setProj(m);
+        }
+    }
+
+    private Triangle findCenter(List<Triangle> triangles,
+                                List<Point2D> corners) {
+        double x = 0, y = 0;
+        for (Point2D p: corners) {
+            x += p.getX();
+            y += p.getY();
+        }
+        x /= corners.size();
+        y /= corners.size();
+        Point2D c = new Point2D.Double(x, y);
+        Triangle t1 = triangles.get(0), t2;
+        while (true) {
+            t2 = t1.neighborContaining(c);
+            if (t1 == t2) return t1;
+            t1 = t2;
         }
     }
 
@@ -149,6 +173,23 @@ public class TileTransformer implements Runnable {
             runtimeException = null;
             throw runE;
         }
+    }
+
+    public Point2D transform(Point2D in, Point2D out) {
+        Triangle t1 = lastUsedTriangle, t2;
+        while (true) {
+            t2 = t1.neighborContaining(in);
+            if (t1 == t2) break;
+            if (t2 == null) {
+                break;
+            }
+        }
+        Vec3R v = new Vec3R(in.getX(), in.getY());
+        v = t1.getProj().multiply(v);
+        lastUsedTriangle = t1;
+        if (out == null)
+            out = new Point2D.Double();
+        return v.dehomogenize(out);
     }
 
 }

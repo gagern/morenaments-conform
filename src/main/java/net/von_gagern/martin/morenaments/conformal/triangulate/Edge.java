@@ -104,4 +104,11 @@ class Edge {
         return p1.distanceSq(p2);
     }
 
+    public Triangle otherTriangle(Triangle t) {
+        if (left == t)
+            return right;
+        assert right == t;
+        return left;
+    }
+
 }
