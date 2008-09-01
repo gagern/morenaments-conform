@@ -98,6 +98,10 @@ public class GUI extends JDesktopPane {
                 public void actionPerformed(ActionEvent e) {
                     hypTile();
                 }}, imageActions)));
+        menu.add(new JMenuItem(aal(new AbstractAction("Render Tiling") {
+                public void actionPerformed(ActionEvent e) {
+                    tiling();
+                }}, imageActions)));
 
         for (Action a: imageActions)
             a.setEnabled(false);
@@ -215,6 +219,7 @@ public class GUI extends JDesktopPane {
         }
     }
 
+
     private void hypTile() {
         Group g = currentImageDisplay.getGroup();
         if (g == null) {
@@ -237,6 +242,27 @@ public class GUI extends JDesktopPane {
         String newTitle = "HypTile of " + currentImageDisplay.getTitle();
         BufferedImage img = currentImageDisplay.getImage();
         start(new HypTileTask(img, g, size, newTitle));
+    }
+
+    private void tiling() {
+        Group g = currentImageDisplay.getGroup();
+        if (g == null) {
+            Group.EuclideanGroup eg = (Group.EuclideanGroup)
+                JOptionPane.showInputDialog(this,
+                    "Select euclidean group",
+                    "Select Group",
+                    JOptionPane.QUESTION_MESSAGE, null,
+                    Group.EuclideanGroup.values(), null);
+            if (eg == null) return;
+            g = Group.getInstance(eg);
+            AngleCountsDlg acdlg = new AngleCountsDlg(this);
+            acdlg.setGroup(g);
+            if (!acdlg.showModal()) return;
+            g.setHyperbolicAngles(acdlg.getAngles());
+        }
+        String newTitle = "Tiling of " + currentImageDisplay.getTitle();
+        BufferedImage img = currentImageDisplay.getImage();
+        start(new TilingTask(img, g, size, newTitle));
     }
 
     private void start(Work work) {
@@ -269,6 +295,44 @@ public class GUI extends JDesktopPane {
             TileTransformer tt = new TileTransformer(g);
             tt.transform();
             outImg = tt.render(pls, size, outImg);
+        }
+
+        protected void done() {
+            addImage(title, outImg, g);
+        }
+
+        protected void exception(Exception e) {
+            error(e);
+        }
+
+    }
+
+    private class TilingTask extends Work {
+        
+        private final String title;
+        private final BufferedImage inImg;
+        private final Group g;
+        private final int size;
+
+        private BufferedImage outImg;
+
+        public TilingTask(BufferedImage img, Group g, int size, String title) {
+            super(busy);
+            this.inImg = img;
+            this.g = g;
+            this.size = size;
+            this.title = title;
+        }
+
+        protected void doInBackground() throws Exception {
+            int size = inImg.getWidth();
+            if (inImg.getHeight() != size)
+                throw new Exception("Input image has to be square");
+            AffineTransform tr;
+            tr = SimplePixelLookupSource.unitDiskTransform(size);
+            PixelLookupSource pls = new SimplePixelLookupSource(inImg, tr);
+            TilingRenderer t = new TilingRenderer(g);
+            outImg = t.render(pls, size, outImg);
         }
 
         protected void done() {

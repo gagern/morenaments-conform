@@ -51,7 +51,7 @@ class SimpleDisplay extends JPanel {
         size -= size & 1;
         if (osi == null || osi.getWidth() != size || osi.getHeight() != size) {
             osi = acceleratedImage(size, size, g);
-            tr.render(size, osi);
+            tr.render(null, size, osi);
         }
         g.drawImage(osi, (getWidth() - size)/2, (getHeight() - size)/2, this);
     }

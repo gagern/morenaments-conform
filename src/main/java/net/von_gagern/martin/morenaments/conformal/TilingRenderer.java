@@ -1,6 +1,8 @@
 package net.von_gagern.martin.morenaments.conformal;
 
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
+
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;
 import net.von_gagern.martin.morenaments.conformal.groups.Group;
@@ -13,6 +15,8 @@ public class TilingRenderer {
 
     private final HypTrafo[] generators;
 
+    private PixelLookupSource source;
+
     private int r;
 
     private BufferedImage target;
@@ -23,14 +27,16 @@ public class TilingRenderer {
         generators = group.getGenerators();
     }
 
-    public BufferedImage render(int size, BufferedImage target) {
+    public BufferedImage render(PixelLookupSource source,
+                                int size, BufferedImage target) {
+        this.source = source;
         this.r = size / 2;
-        this.target = target;
         size = r*2;
         if (target == null ||
             target.getWidth() != size || target.getHeight() != size) {
             target = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         }
+        this.target = target;
         HypTrafo[][] t = new HypTrafo[8][r];
         HypTrafo id = HypTrafo.getIdentity();
         for (int i = 0; i < 8; ++i)
@@ -145,12 +151,17 @@ public class TilingRenderer {
     java.util.Random rnd = new java.util.Random(1271476327);
 
     protected int getColor(HypTrafo t, Vec2C v) {
-        Integer color = colorMap.get(t);
-        if (color == null) {
-            color = 0xff000000 | rnd.nextInt(1 << 24);
-            colorMap.put(t, color);
+        if (source == null) { // debug use
+            Integer color = colorMap.get(t);
+            if (color == null) {
+                color = 0xff000000 | rnd.nextInt(1 << 24);
+                colorMap.put(t, color);
+            }
+            return color;
         }
-        return color;
+        t.inverseTransform(v, v);
+        Point2D p = v.dehomogenize(new Point2D.Double());
+        return source.getRGB(p);
     }
 
 }
