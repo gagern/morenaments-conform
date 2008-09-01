@@ -298,7 +298,11 @@ public class TileTransformer implements Runnable {
         File debugDir = new File("debug");
         if (!debugDir.isDirectory()) return;
         try {
+            File outFile = new File(debugDir, name + ".svg");
+            logger.debug("Writing triangles to " + outFile.getPath());
+            logger.debug("Creaing mesh");
             Mesh2D m2d = new Mesh2D(mesh);
+            logger.debug("Mesh created");
             Rectangle2D rect = m2d.getBoundary().getBounds2D();
             if (inset > 0) {
                 rect.add(rect.getMinX() - inset, rect.getMinY() - inset);
@@ -308,12 +312,13 @@ public class TileTransformer implements Runnable {
                                      height/rect.getHeight());
             width = factor*rect.getWidth();
             height = factor*rect.getHeight();
-            File outFile = new File(debugDir, name + ".svg");
+            logger.debug("Writing mesh");
             FileOutputStream outStream = new FileOutputStream(outFile);
             SvgWriter svg = new SvgWriter(outStream);
             svg.head(rect, width, height);
             svg.writeTriangles(mesh);
             svg.tail();
+            logger.debug("Mesh written");
         }
         catch (Exception e) {
             e.printStackTrace();
