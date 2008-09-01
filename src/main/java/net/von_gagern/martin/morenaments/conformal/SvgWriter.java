@@ -1,4 +1,4 @@
-package net.von_gagern.martin.morenaments.conformal.triangulate;
+package net.von_gagern.martin.morenaments.conformal;
 
 import java.awt.Shape;
 import java.awt.geom.Line2D;
@@ -6,12 +6,18 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+
+import net.von_gagern.martin.confoo.mesh.CorneredTriangle;
+import net.von_gagern.martin.confoo.mesh.LocatedMesh;
 import net.von_gagern.martin.confoo.mesh.flat.Mesh2D;
 
-public class SvgMeshWriter {
+class SvgWriter {
 
     private static final String PUBLIC =
         "-//W3C//DTD SVG 1.1//EN";
@@ -30,11 +36,11 @@ public class SvgMeshWriter {
 
     private String encoding = null;
 
-    private double inset = 5;
+    private double defaultStrokeWidth = 0.001;
 
-    private double scale = 1;
+    private Set<String> uniqueIds = new HashSet<String>();
 
-    public SvgMeshWriter(OutputStream out) throws XMLStreamException {
+    public SvgWriter(OutputStream out) throws XMLStreamException {
         encoding = "UTF-8";
         XMLOutputFactory factory = XMLOutputFactory.newInstance();
         svg = factory.createXMLStreamWriter(out, encoding);
@@ -48,43 +54,68 @@ public class SvgMeshWriter {
         this.encoding = encoding;
     }
 
-    public double getInset() {
-        return inset;
+    private void writeIdIfUnique(String id) throws XMLStreamException {
+        if (id != null && uniqueIds.add(id))
+            svg.writeAttribute("id", id);
     }
 
-    public void setInset(double inset) {
-        this.inset = inset;
-    }
-
-    public void setScale(double scale) {
-        this.scale = scale;
+    public <V> void writeTriangles(LocatedMesh<V> mesh)
+        throws XMLStreamException
+    {
+        svg.writeStartElement(NS, "g");
+        writeIdIfUnique("triangles");
+        svg.writeAttribute("stroke", "#060");
+        svg.writeAttribute("stroke-width", format(defaultStrokeWidth));
+        svg.writeAttribute("fill", "#f90");
+        svg.writeAttribute("fill-opacity", "30%");
+        svg.writeCharacters("\n");
+        for (Iterator<? extends CorneredTriangle<? extends V>> i =
+             mesh.iterator(); i.hasNext(); ){
+            CorneredTriangle<? extends V> t = i.next();
+            StringBuilder d = new StringBuilder();
+            String mode = "M ";
+            for (int j = 0; j < 3; ++j) {
+                V v = t.getCorner(j);
+                double x = mesh.getX(v);
+                double y = mesh.getY(v);
+                d.append(mode).append(x).append(' ').append(y);
+                mode = " L ";
+            }
+            d.append(" Z");
+            svg.writeEmptyElement(NS, "path");
+            svg.writeAttribute("d", d.toString());
+            svg.writeCharacters("\n");
+        }
+        svg.writeEndElement();
+        svg.writeCharacters("\n");
     }
 
     public void writeMesh(Mesh2D mesh) throws XMLStreamException {
-        Shape boundary = mesh.getBoundary();
-        head(boundary.getBounds2D());
         interiorEdges(mesh.getInteriorEdges());
-        boundary(boundary);
-        tail();
+        boundary(mesh.getBoundary());
     }
 
-    private void head(Rectangle2D rect) throws XMLStreamException {
-        String x = format(rect.getX() - inset);
-        String y = format(rect.getY() - inset);
-        String w = format(rect.getWidth() + 2*inset);
-        String h = format(rect.getHeight() + 2*inset);
+    public void head(Rectangle2D rect, double width, double height)
+        throws XMLStreamException
+    {
+        String x = format(rect.getX());
+        String y = format(rect.getY());
+        String w = format(rect.getWidth());
+        String h = format(rect.getHeight());
         String viewBox = x + " " + y + " " + w + " " + h;
         if (encoding == null) svg.writeStartDocument("1.0");
         else svg.writeStartDocument(encoding, "1.0");
         svg.writeDTD(DOCTYPE);
+        svg.writeCharacters("\n");
         svg.setDefaultNamespace(NS);
         svg.writeStartElement(NS, "svg");
         svg.writeDefaultNamespace(NS);
         svg.writeAttribute("version", VERSION);
-        svg.writeAttribute("width", w);
-        svg.writeAttribute("height", h);
+        svg.writeAttribute("width", format(width));
+        svg.writeAttribute("height", format(height));
         svg.writeAttribute("viewBox", viewBox);
         svg.writeAttribute("fill", "none");
+        svg.writeCharacters("\n");
     }
 
     private void interiorEdges(Collection<? extends Line2D> edges)
@@ -100,22 +131,25 @@ public class SvgMeshWriter {
             moveto = "\nM ";
         }
         svg.writeEmptyElement(NS, "path");
-        svg.writeAttribute("id", "interior");
+        writeIdIfUnique("interior");
         svg.writeAttribute("stroke", "#060");
-        svg.writeAttribute("stroke-width", "1");
+        svg.writeAttribute("stroke-width", format(defaultStrokeWidth));
         svg.writeAttribute("d", buf.toString());
+        svg.writeCharacters("\n");
     }
 
     private void boundary(Shape boundary) throws XMLStreamException {
         svg.writeEmptyElement(NS, "path");
-        svg.writeAttribute("id", "boundary");
+        writeIdIfUnique("boundary");
         svg.writeAttribute("stroke", "#006");
-        svg.writeAttribute("stroke-width", "2");
+        svg.writeAttribute("stroke-width", format(2*defaultStrokeWidth));
         svg.writeAttribute("d", walkPath(boundary.getPathIterator(null)));
+        svg.writeCharacters("\n");
     }
 
-    private void tail() throws XMLStreamException {
+    public void tail() throws XMLStreamException {
         svg.writeEndElement();
+        svg.writeCharacters("\n");
         svg.writeEndDocument();
         svg.close();
     }
@@ -161,7 +195,7 @@ public class SvgMeshWriter {
     }
 
     private String format(double d) {
-        return Double.toString(d*scale);
+        return Double.toString(d);
     }
 
 }

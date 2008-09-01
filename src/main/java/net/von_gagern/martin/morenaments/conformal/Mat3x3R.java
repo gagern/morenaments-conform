@@ -70,9 +70,24 @@ public class Mat3x3R {
     public Mat3x3R getInverse() {
         double d = det();
         double[] ci = new double[9];
-        for (int i = 0; i < 9*4; i *= 4)
-            ci[i/9] = (m[INV[i]]*m[INV[i+1]] - m[INV[i+2]]*m[INV[i+3]])/d;
+        for (int i = 0; i < 9*4; i += 4)
+            ci[i/4] = (m[INV[i]]*m[INV[i+1]] - m[INV[i+2]]*m[INV[i+3]])/d;
         return new Mat3x3R(ci);
+    }
+
+    public String toString() {
+        StringBuilder buf = new StringBuilder();
+        String startRow = "Mat3x3R[";
+        for (int row = 0; row < 3; ++row) {
+            String startCol = startRow;
+            startRow = "; ";
+            for (int col = 0; col < 3; ++col) {
+                buf.append(startCol).append(get(row, col));
+                startCol = ", ";
+            }
+        }
+        buf.append("]");
+        return buf.toString();
     }
 
 }

@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+  <appender name="debugfile" class="org.apache.log4j.FileAppender">
+    <param name="File" value="${basedir}/target/surefire-reports/debug.log"/>
+    <param name="Append" value="false"/>
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%-5p %c{2} - %m%n"/>
+    </layout>
+  </appender>
+
+  <category name="net.von_gagern.martin.morenaments.conformal">
+    <priority value="debug"/>
+  </category>
+
+  <root>
+    <priority value="info"/>
+    <appender-ref ref="debugfile"/>
+  </root>
+
+</log4j:configuration>

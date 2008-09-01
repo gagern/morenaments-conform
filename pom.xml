@@ -68,6 +68,11 @@
       <version>0.4-SNAPSHOT</version>
     </dependency>
     <dependency>
+      <groupId>net.von-gagern.martin.morenaments</groupId>
+      <artifactId>euc</artifactId>
+      <version>1.5-SNAPSHOT</version>
+    </dependency>
+    <dependency>
       <groupId>net.von-gagern.martin</groupId>
       <artifactId>confoo</artifactId>
       <version>1.1-SNAPSHOT</version>
@@ -77,10 +82,15 @@
       <artifactId>getopt</artifactId>
       <version>1.0-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <properties>
-    <main.class>net.von_gagern.martin.morenaments.conformal.SimpleDisplay</main.class>
+    <main.class>net.von_gagern.martin.morenaments.conformal.CommandLine</main.class>
   </properties>
 
   <build>

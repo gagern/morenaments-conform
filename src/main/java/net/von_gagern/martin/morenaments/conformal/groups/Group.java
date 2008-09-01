@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import de.tum.in.gagern.hornamente.HypTrafo;
 
-public abstract class Group {
+public abstract class Group implements Cloneable {
 
     protected final int[] euclideanAngles;
 
@@ -27,10 +27,12 @@ public abstract class Group {
 	return true;
     }
 
-    public void setHyperbolidAngles(int[] hyperbolicAngles) {
+    public void setHyperbolicAngles(int[] hyperbolicAngles) {
 	if (!checkHyperbolicAngles(hyperbolicAngles))
 	    throw new IllegalArgumentException("Invalid hyperbolic angles");
 	this.hyperbolicAngles = hyperbolicAngles;
+        insidenessChecks = null;
+        generators = null;
     }
 
     public HypTrafo[] getGenerators() {
@@ -64,6 +66,18 @@ public abstract class Group {
 
     public abstract double getEuclideanCornerAngle(int index);
 
+    @Override public Group clone() {
+        try {
+            Group that = (Group)super.clone();
+            if (hyperbolicAngles != null)
+                that.setHyperbolicAngles((int[])hyperbolicAngles.clone());
+            return that;
+        }
+        catch (CloneNotSupportedException e) {
+            throw new Error(e);
+        }
+    }
+
     public static P6m p6m() {
         return new P6m();
     }
@@ -94,6 +108,23 @@ public abstract class Group {
 
     public static P4 p4() {
         return new P4();
+    }
+
+    public enum EuclideanGroup {
+        p6m, p6, p31m, p3m1, p3, p4g, p4m, p4,
+    }
+
+    public static Group getInstance(EuclideanGroup g) {
+        switch (g) {
+        case p6m: return new P6m();
+        case p6: return new P6();
+        case p31m: return new P31m();
+        case p3: return new P3();
+        case p4g: return new P4g();
+        case p4m: return new P4m();
+        case p4: return new P4();
+        default: throw new IllegalArgumentException("Invalid group: " + g);
+        }
     }
 
 }

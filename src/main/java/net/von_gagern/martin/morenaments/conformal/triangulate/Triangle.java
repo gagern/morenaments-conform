@@ -41,18 +41,20 @@ public class Triangle implements CorneredTriangle<Point2D> {
         this.proj = proj;
     }
 
-    public Triangle neighborContaining(Point2D p) {
+    public Triangle neighbourContaining(Point2D p) {
         Point2D c1 = vs.get(2), c2;
         Triangle res = this;
         double minCcw = 0;
         for (int i = 0; i < 3; ++i) {
             c2 = vs.get(i);
             double ccw = ccw(c1, c2, p);
-            if (ccw < 0 && (res == null || ccw < minCcw)) {
-                res = es.get((i + 1)%3).otherTriangle(this);
-                minCcw = ccw;
-            }
             c1 = c2;
+            if (ccw >= 0) continue; // we are inside this edge
+            if (res != null && ccw > minCcw) continue; // other edge is better
+            Triangle other = es.get((i + 1)%3).otherTriangle(this);
+            if (other == null && res != this) continue; // prefer non-null
+            res = other;
+            minCcw = ccw;
         }
         return res;
     }

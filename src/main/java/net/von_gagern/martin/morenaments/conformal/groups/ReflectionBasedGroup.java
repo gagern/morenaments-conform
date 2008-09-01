@@ -31,9 +31,9 @@ abstract class ReflectionBasedGroup extends Group {
         return ts;
     }
 
-    @Override public void setHyperbolidAngles(int[] hyperbolicAngles) {
+    @Override public void setHyperbolicAngles(int[] hyperbolicAngles) {
         fundamentalTriangle = null;
-        super.setHyperbolidAngles(hyperbolicAngles);
+        super.setHyperbolicAngles(hyperbolicAngles);
     }
 
     protected void ensureFundamentalTriangle() {

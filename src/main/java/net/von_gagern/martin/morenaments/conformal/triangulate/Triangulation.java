@@ -17,7 +17,7 @@ public class Triangulation
     implements LocatedMesh<Point2D>
 {
 
-    private double maxLengthSq = 1e-4;
+    private double maxLengthSq = 1e-3;
 
     private List<Triangle> triangles;
 
@@ -123,7 +123,7 @@ public class Triangulation
 
         // update data structures
         triangles.add(t2);
-        q.add(mc);
+        enqueue(mc);
     }
 
     public Triangle get(int index) {

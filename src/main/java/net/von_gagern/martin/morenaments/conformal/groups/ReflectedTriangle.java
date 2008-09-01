@@ -28,6 +28,7 @@ abstract class ReflectedTriangle extends ReflectionBasedGroup {
     }
 
     public List<Point2D> getHypTileCorners() {
+        ensureFundamentalTriangle();
         List<Point2D> corners = new ArrayList<Point2D>(3);
         for (int i = 0; i < 3; ++i) {
             Vec2C v = fundamentalTriangle.getCorner(i);

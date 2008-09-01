@@ -39,7 +39,7 @@ class SimpleDisplay extends JPanel {
             ha[i] = Integer.parseInt(args[i + 1]);
             System.out.println(ea[i] + " -> " + ha[i]);
         }
-        g.setHyperbolidAngles(ha);
+        g.setHyperbolicAngles(ha);
         tr = new TilingRenderer(g);
     }
 
