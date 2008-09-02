@@ -2,7 +2,7 @@ package net.von_gagern.martin.morenaments.conformal;
 
 import de.tum.in.gagern.hornamente.Vec3R;
 
-public class Mat3x3R {
+public class Mat3x3R implements Cloneable {
 
     private double[] m;
 
@@ -14,6 +14,10 @@ public class Mat3x3R {
         if (components.length != 9)
             throw new IllegalArgumentException("Need exactly 9 components");
         m = components;
+    }
+
+    public Mat3x3R clone() {
+        return new Mat3x3R((double[])m.clone());
     }
 
     public double get(int row, int col) {

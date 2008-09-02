@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +19,7 @@ import org.apache.log4j.Logger;
 
 import net.von_gagern.martin.confoo.conformal.Conformal;
 import net.von_gagern.martin.confoo.conformal.ResultMesh;
+import net.von_gagern.martin.confoo.mesh.CorneredTriangle;
 import net.von_gagern.martin.confoo.mesh.LocatedMesh;
 import net.von_gagern.martin.confoo.mesh.MeshException;
 import net.von_gagern.martin.confoo.mesh.ObjFormat;
@@ -70,7 +72,7 @@ public class TileTransformer implements Runnable {
             angles.put(hypCorners.get(i), angle);
         }
         c.fixedBoundaryCurvature(angles);
-        ResultMesh eucMesh = c.transform();
+        ResultMesh<Point2D> eucMesh = c.transform();
         dumpTriangles("eucMesh", eucMesh);
 
         /* For every triangle, find a projective transformation which
@@ -103,8 +105,49 @@ public class TileTransformer implements Runnable {
             //m = eucTriple.multiply(hypTriple.getInverse());
             t.setProj(m);
         }
-        dumpTriangles("projMesh", projMesh(hypMesh));
+        dumpTriangles("affineMesh", new AffineMesh(eucMesh, affine));
         logger.debug("Mesh transformation complete");
+    }
+
+    private static class AffineMesh implements LocatedMesh<Point2D> {
+
+        private LocatedMesh<Point2D> inMesh;
+
+        private Mat3x3R mat;
+
+        public AffineMesh(LocatedMesh<Point2D> inMesh, Mat3x3R transform) {
+            this.inMesh = inMesh;
+            mat = transform.clone();
+            mat.scale(1/mat.get(2, 2));
+        }
+
+        public Iterator<? extends CorneredTriangle<? extends Point2D>>
+        iterator() {
+            return inMesh.iterator();
+        }
+
+        public double getX(Point2D v) {
+            double x = inMesh.getX(v), y = inMesh.getY(v);
+            return mat.get(0, 0)*x + mat.get(0, 1)*y + mat.get(0, 2);
+        }
+
+        public double getY(Point2D v) {
+            double x = inMesh.getX(v), y = inMesh.getY(v);
+            return mat.get(1, 0)*x + mat.get(1, 1)*y + mat.get(1, 2);
+        }
+
+        public double getZ(Point2D v) {
+            return 0;
+        }
+
+        public double edgeLength(Point2D v1, Point2D v2) {
+            double x1 = inMesh.getX(v1), y1 = inMesh.getY(v1);
+            double x2 = inMesh.getX(v2), y2 = inMesh.getY(v2);
+            double dx = mat.get(0, 0)*(x1 - x2) + mat.get(0, 1)*(y1 - y2);
+            double dy = mat.get(1, 0)*(x1 - x2) + mat.get(1, 1)*(y1 - y2);
+            return Math.hypot(dx, dy);
+        }
+
     }
 
     private Mesh2D projMesh(List<Triangle> triangles) {
@@ -333,7 +376,8 @@ public class TileTransformer implements Runnable {
             FileOutputStream outStream = new FileOutputStream(outFile);
             SvgWriter svg = new SvgWriter(outStream);
             svg.head(rect, width, height);
-            svg.writeTriangles(mesh);
+            //svg.writeTriangles(mesh);
+            svg.writeMesh(m2d);
             svg.tail();
             logger.debug("Mesh written");
         }
