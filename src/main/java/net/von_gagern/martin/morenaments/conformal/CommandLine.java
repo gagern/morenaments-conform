@@ -22,6 +22,8 @@ public class CommandLine {
         DOMConfigurator.configure(CommandLine.class.getResource("log4j.xml"));
     }
 
+    private Integer size;
+
     public CommandLine(String[] args) throws OptException {
         OptParser<CommandLineOption> parser =
             OptParser.getInstance(CommandLineOption.values());
@@ -34,6 +36,12 @@ public class CommandLine {
                 continue;
             }
             switch (key) {
+            case size:
+                size(pair);
+                break;
+            case debug:
+                debug(pair);
+                break;
             case help:
                 System.out.println("Usage: java " +
                                    CommandLine.class.getName() +
@@ -42,23 +50,41 @@ public class CommandLine {
                 System.out.println("Options:");
                 parser.printHelp(System.out);
                 break;
-            case debug:
-                debug(value);
-                break;
             default:
                 throw new OptException("Unsupported command line option", pair);
             }
         }
     }
 
-    private void debug(String value) throws OptException {
+    private void size(OptPair<CommandLineOption> pair) throws OptException {
+        this.size = intValue(pair, 2, (1 << 16) - 1);
+    }
+
+    private int intValue(OptPair<CommandLineOption> pair, int min, int max)
+        throws OptException
+    {
+        try {
+            int i = Integer.parseInt(pair.getValue());
+            if (i < min)
+                throw new OptException("Argument less than " + min, pair);
+            if (i > max)
+                throw new OptException("Argument greater than " + max, pair);
+            return i;
+        }
+        catch (NumberFormatException e) {
+            throw new OptException("Integer argument expected", pair);
+        }
+    }
+
+    private void debug(OptPair<CommandLineOption> pair) throws OptException {
+        String value = pair.getValue();
         String[] parts;
         if (value == null)
             parts = new String[0];
         else
             parts = value.split(":");
         if (parts.length > 2)
-            throw new OptException("Illegal debug request", value);
+            throw new OptException("Illegal debug request", pair);
         String name = "", levelStr = "";
         if (parts.length > 1) levelStr = parts[1];
         if (parts.length > 0) name = parts[0];
@@ -80,6 +106,11 @@ public class CommandLine {
         frm.pack();
         frm.setLocationByPlatform(true);
         frm.setVisible(true);
+    }
+
+    public int getSize(int defaultValue) {
+        if (size == null) return defaultValue;
+        return size;
     }
 
 }

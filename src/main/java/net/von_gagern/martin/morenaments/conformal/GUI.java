@@ -51,7 +51,7 @@ public class GUI extends JDesktopPane {
         busy = new BusyFeedback(this);
         setPreferredSize(new Dimension(600, 600));
         currentDir = new File(".");
-        size = 800;
+        size = cl.getSize(800);
         JMenuBar menuBar = createMenuBar();
         if (frame != null) {
             frame.setJMenuBar(menuBar);
