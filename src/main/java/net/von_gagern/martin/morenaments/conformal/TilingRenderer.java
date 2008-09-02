@@ -86,62 +86,75 @@ public class TilingRenderer {
 
     private int[] violationStatistics;
 
-    public HypTrafo findTrafo(Vec2C v, int maxIterations)
-        throws InfiniteLoopException
-    {
+    public HypTrafo findTrafo(Vec2C v, int maxIterations) {
         violationStatistics = new int[maxIterations];
         return findTrafo(v, HypTrafo.getIdentity(), null, false);
     }
 
     private HypTrafo findTrafo(Vec2C v, HypTrafo t, HypTrafo t2,
-                               boolean debug) throws InfiniteLoopException {
+                               boolean debug) {
         Vec2C v2 = new Vec2C();
         if (t == null) t = t2;
         t.inverseTransform(v, v2);
-        int violated = insidenessCheck(v2, debug);
+        InsidenessCheck ic = new InsidenessCheck();
+        double minViolation = Double.POSITIVE_INFINITY;
+        HypTrafo minViolatingTransform = null;
+        int violated = ic.insidenessCheck(v2, debug);
         if (violated == -1) return t;
         if (t2 != null && t2 != t) {
             t = t2;
             t.inverseTransform(v, v2);
-            violated = insidenessCheck(v2, debug);
+            violated = ic.insidenessCheck(v2, debug);
             if (violated == -1) return t;
         }
         t = t.clone();
-        for (int i = 0; i < violationStatistics.length; ++i) {
+        for (int i = 1; i < violationStatistics.length; ++i) {
             if (debug)
                 System.out.println("t = " + t + " * " + generators[violated]);
             t.concatenate(generators[violated]);
             t.inverseTransform(v, v2);
-            violated = insidenessCheck(v2, debug);
+            violated = ic.insidenessCheck(v2, debug);
             if (violated == -1) {
                 ++ violationStatistics[i];
                 return t;
             }
+            if (ic.violation < minViolation) {
+                minViolation = ic.violation;
+                minViolatingTransform = t;
+            }
         }
         // Should have gotten inside by now. Prevent a loop.
-        throw new InfiniteLoopException("Could not get inside the main tile.");
+        ++ violationStatistics[0];
+        return minViolatingTransform;
     }
 
-    private int insidenessCheck(Vec2C v, boolean debug) {
-        Vec2C v2 = new Vec2C();
-        int mostViolated = -1;
-        double maxViolation = 0;
-        for (int i = 0; i < insidenessChecks.length; ++i) {
-            insidenessChecks[i].transform(v, v2);
-            v2.normalize();
-            double violation = v2.x.r*v2.y.i - v2.x.i*v2.y.r;
-            if (violation < maxViolation) continue;
-            maxViolation = violation;
-            mostViolated = i;
+    private class InsidenessCheck {
+
+        double violation;
+
+        int insidenessCheck(Vec2C v, boolean debug) {
+            Vec2C v2 = new Vec2C();
+            int mostViolated = -1;
+            double maxViolation = 0;
+            for (int i = 0; i < insidenessChecks.length; ++i) {
+                insidenessChecks[i].transform(v, v2);
+                v2.normalize();
+                double violation = v2.x.r*v2.y.i - v2.x.i*v2.y.r;
+                if (violation < maxViolation) continue;
+                maxViolation = violation;
+                mostViolated = i;
+            }
+            if (debug) {
+                if (mostViolated != -1)
+                    System.out.println(mostViolated + " violated by " +
+                                       maxViolation);
+                else
+                    System.out.println("none violated");
+            }
+            this.violation = maxViolation;
+            return mostViolated;
         }
-        if (debug) {
-            if (mostViolated != -1)
-                System.out.println(mostViolated + " violated by " +
-                                   maxViolation);
-            else
-                System.out.println("none violated");
-        }
-        return mostViolated;
+
     }
 
     java.util.Map<HypTrafo, Integer> colorMap =
