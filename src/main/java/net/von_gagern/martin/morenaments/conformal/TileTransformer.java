@@ -33,7 +33,8 @@ import net.von_gagern.martin.morenaments.conformal.triangulate.Triangulation;
 
 public class TileTransformer implements Runnable {
 
-    private static Logger logger = Logger.getLogger(TileTransformer.class);
+    private static final Logger logger =
+        Logger.getLogger(TileTransformer.class);
 
     private Group g;
 
@@ -253,6 +254,7 @@ public class TileTransformer implements Runnable {
         AffineTransform tri;
         try { tri = tr.createInverse(); }
         catch (NoninvertibleTransformException e) { throw new Error(e); }
+        TilingRenderer tiling = new TilingRenderer(g);
         Point2D p = new Point2D.Double();
         tr.transform(hypCorners.get(0), p);
         Rectangle2D rect = new Rectangle2D.Double(p.getX(), p.getY(), 0, 0);
@@ -267,19 +269,15 @@ public class TileTransformer implements Runnable {
         Rectangle b = rect.getBounds();
         Vec2C v1 = new Vec2C(0, 0, 1, 0), v2 = new Vec2C();
         for (int y = b.y; y <= b.y + b.height; ++y) {
-            PIXELS: for (int x = b.x; x <= b.x + b.width; ++x) {
+            for (int x = b.x; x <= b.x + b.width; ++x) {
+                if (!pixelCornerInside(tri, x, y))
+                    continue;
                 p.setLocation(x, y);
                 tri.transform(p, p);
                 v1.x.assign(p.getX(), p.getY());
-                for (HypTrafo ic: g.getInsidenessChecks()) {
-                    ic.transform(v1, v2);
-                    if (v2.signImag() < 0) {
-                        if (logger.isTraceEnabled())
-                            logger.trace(String.format("Tile (%3d,%3d) outside",
-                                                       x, y));
-                        continue PIXELS;
-                    }
-                }
+                HypTrafo ht = tiling.findTrafo(v1, 32);
+                ht.inverseTransform(v1, v2);
+                v2.dehomogenize(p);
                 transform(p, p);
                 int rgb = source.getRGB(p);
                 target.setRGB(x, y, rgb);
@@ -292,6 +290,24 @@ public class TileTransformer implements Runnable {
         return target;
     }
 
+    private boolean pixelCornerInside(AffineTransform tr, double x, double y) {
+        return pointInside(tr, x, y) ||
+               pointInside(tr, x+.5, y+.5) || pointInside(tr, x-.5, y-.5) ||
+               pointInside(tr, x+.5, y-.5) || pointInside(tr, x-.5, y+.5);
+    }
+
+    private boolean pointInside(AffineTransform tr, double x, double y) {
+        Point2D p = new Point2D.Double(x, y);
+        tr.transform(p, p);
+        Vec2C v1 = new Vec2C(p.getX(), p.getY(), 1, 0), v2 = new Vec2C();
+        for (HypTrafo ic: g.getInsidenessChecks()) {
+            ic.transform(v1, v2);
+            if (v2.signImag() < 0)
+                return false;
+        }
+        return true;
+    }
+
     private void dumpTriangles(String name, LocatedMesh<?> mesh) {
         double inset = 0.01;
         double width = 600, height = 600;
@@ -300,10 +316,11 @@ public class TileTransformer implements Runnable {
         try {
             File outFile = new File(debugDir, name + ".svg");
             logger.debug("Writing triangles to " + outFile.getPath());
-            logger.debug("Creaing mesh");
+            logger.debug("Creating mesh");
             Mesh2D m2d = new Mesh2D(mesh);
-            logger.debug("Mesh created");
+            logger.debug("Mesh created, getting boundary");
             Rectangle2D rect = m2d.getBoundary().getBounds2D();
+            logger.debug("Got boundary rect");
             if (inset > 0) {
                 rect.add(rect.getMinX() - inset, rect.getMinY() - inset);
                 rect.add(rect.getMaxX() + inset, rect.getMaxY() + inset);

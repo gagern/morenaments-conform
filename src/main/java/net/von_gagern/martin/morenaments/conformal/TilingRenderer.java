@@ -86,6 +86,13 @@ public class TilingRenderer {
 
     private int[] violationStatistics;
 
+    public HypTrafo findTrafo(Vec2C v, int maxIterations)
+        throws InfiniteLoopException
+    {
+        violationStatistics = new int[maxIterations];
+        return findTrafo(v, HypTrafo.getIdentity(), null, false);
+    }
+
     private HypTrafo findTrafo(Vec2C v, HypTrafo t, HypTrafo t2,
                                boolean debug) throws InfiniteLoopException {
         Vec2C v2 = new Vec2C();
@@ -113,14 +120,6 @@ public class TilingRenderer {
         }
         // Should have gotten inside by now. Prevent a loop.
         throw new InfiniteLoopException("Could not get inside the main tile.");
-    }
-
-    private static class InfiniteLoopException extends RuntimeException {
-
-        public InfiniteLoopException(String message) {
-            super(message);
-        }
-
     }
 
     private int insidenessCheck(Vec2C v, boolean debug) {
