@@ -112,6 +112,7 @@ public abstract class Group implements Cloneable {
 
     public enum EuclideanGroup {
         p6m, p6, p31m, p3m1, p3, p4g, p4m, p4,
+        coloredLizards,
     }
 
     public static Group getInstance(EuclideanGroup g) {
@@ -123,6 +124,7 @@ public abstract class Group implements Cloneable {
         case p4g: return new P4g();
         case p4m: return new P4m();
         case p4: return new P4();
+        case coloredLizards: return new ColoredLizards();
         default: throw new IllegalArgumentException("Invalid group: " + g);
         }
     }

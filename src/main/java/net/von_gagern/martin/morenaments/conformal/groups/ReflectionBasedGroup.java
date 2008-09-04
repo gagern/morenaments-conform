@@ -16,19 +16,16 @@ abstract class ReflectionBasedGroup extends Group {
         ensureFundamentalTriangle();
         String[] gs = getGeneratorStrings();
         HypTrafo[] ts = new HypTrafo[gs.length];
-        HypTrafo[] rs = new HypTrafo[3];
-        for (int i = 0; i < 3; ++i)
-            rs[i] = fundamentalTriangle.getReflection(i);
-        for (int i = 0; i < gs.length; ++i) {
-            String g = gs[i];
-            HypTrafo t = new HypTrafo();
-            for (int j = 0; j < g.length(); ++j)
-                t.concatenate(rs[g.charAt(j) - 'a']);
-            t.normalize();
-            ts[i] = t;
-            System.out.println(g + " -> " + t);
-        }
+        for (int i = 0; i < gs.length; ++i)
+            ts[i] = s2t(gs[i]);
         return ts;
+    }
+
+    protected HypTrafo s2t(CharSequence s) {
+        HypTrafo t = new HypTrafo();
+        for (int i = 0; i < s.length(); ++i)
+            t.concatenate(fundamentalTriangle.getReflection(s.charAt(i) - 'a'));
+        return t.normalize();
     }
 
     @Override public void setHyperbolicAngles(int[] hyperbolicAngles) {
