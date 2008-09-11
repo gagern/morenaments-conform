@@ -325,11 +325,11 @@ public class GUI extends JDesktopPane {
         }
 
         protected void doInBackground() throws Exception {
-            int size = inImg.getWidth();
-            if (inImg.getHeight() != size)
+            int inSize = inImg.getWidth();
+            if (inImg.getHeight() != inSize)
                 throw new Exception("Input image has to be square");
             AffineTransform tr;
-            tr = SimplePixelLookupSource.unitDiskTransform(size);
+            tr = SimplePixelLookupSource.unitDiskTransform(inSize);
             PixelLookupSource pls = new SimplePixelLookupSource(inImg, tr);
             TilingRenderer t = new TilingRenderer(g);
             outImg = t.render(pls, size, outImg);
