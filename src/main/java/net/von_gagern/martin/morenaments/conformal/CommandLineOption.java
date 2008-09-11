@@ -9,6 +9,8 @@ import static net.von_gagern.martin.getopt.OptArg.REQUIRED;
 enum CommandLineOption implements OptKey {
 
     size(REQUIRED, "Specify size for rendered images"),
+    group(REQUIRED, "Group for automatic renderings"),
+    tile(NONE, "Automatically render tiling of specified images"),
     debug(OPTIONAL, "enable debug output for given class/package"),
     help(NONE, "display this help information");
 
