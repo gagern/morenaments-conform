@@ -59,7 +59,7 @@ public class TilingRenderer {
             for (maxViol = violationStatistics.length - 1;
                  violationStatistics[maxViol] == 0; --maxViol);
             for (int i = 0; i <= maxViol; ++i)
-                System.out.printf("%3d:%7d%n", i + 1, violationStatistics[i]);
+                System.out.printf("%3d:%7d%n", i, violationStatistics[i]);
         }
         return target;
     }
