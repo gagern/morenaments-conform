@@ -119,8 +119,6 @@ public class CommandLine {
     private void group(OptPair<CommandLineOption> pair) throws OptException {
         String value = pair.getValue();
         String[] parts = value.split(",");
-        if (parts.length < 2)
-            throw new OptException("Angles required", pair);
         Group g;
         try {
             Group.EuclideanGroup eg = Group.EuclideanGroup.valueOf(parts[0]);
