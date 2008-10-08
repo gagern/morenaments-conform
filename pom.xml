@@ -70,7 +70,7 @@
     <dependency>
       <groupId>net.von-gagern.martin.morenaments</groupId>
       <artifactId>euc</artifactId>
-      <version>1.5</version>
+      <version>1.6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>net.von-gagern.martin</groupId>

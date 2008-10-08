@@ -120,7 +120,7 @@ public class GUI extends JDesktopPane {
         }
         else {
             euc = new Ornament(null, false);
-            euc.addHooks(new EucHooks(this));
+            euc.addHooks(new EucHooks(euc, this));
             eucFrame = new JFrame("Euclidean (for transformation)");
             eucFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             eucFrame.getContentPane().add(euc);
@@ -263,6 +263,10 @@ public class GUI extends JDesktopPane {
         String newTitle = "Tiling of " + currentImageDisplay.getTitle();
         BufferedImage img = currentImageDisplay.getImage();
         start(new TilingTask(img, g, size, newTitle));
+    }
+
+    public int getImageSize() {
+        return size;
     }
 
     private void start(Work work) {
