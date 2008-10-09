@@ -130,7 +130,7 @@ public class GUI extends JDesktopPane {
         }
     }
 
-    public void recognizedImage(String name, Group group, AffineTransform tr,
+    public void recognizedImage(String name, Group group,
                                 BufferedImage median) {
         addImage(name, median, group);
     }

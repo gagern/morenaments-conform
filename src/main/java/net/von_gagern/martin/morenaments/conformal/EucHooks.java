@@ -54,8 +54,8 @@ class EucHooks extends Hooks {
             System.err.println(e);
             return;
         }
-        AffineTransform tr = new AffineTransform(ax, ay, bx, by, 0, 0);
-        gui.recognizedImage(group.getName(), g, tr, median);
+        g.setEuclideanTransform(new AffineTransform(ax, ay, bx, by, 0, 0));
+        gui.recognizedImage(group.getName(), g, median);
     }
 
     private class RenderAnisotropic extends AbstractAction {
@@ -74,10 +74,10 @@ class EucHooks extends Hooks {
                 System.err.println(e);
                 return;
             }
-            AffineTransform tr = euc.getVectorTransform();
+            g.setEuclideanTransform(euc.getVectorTransform());
             int size = gui.getImageSize();
             BufferedImage img = euc.renderTileAnisotropic(size, size, false);
-            gui.recognizedImage(group.getName(), g, tr, img);
+            gui.recognizedImage(group.getName(), g, img);
         }
 
     }

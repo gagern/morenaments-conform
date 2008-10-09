@@ -1,5 +1,6 @@
 package net.von_gagern.martin.morenaments.conformal.groups;
 
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,12 +16,22 @@ public abstract class Group implements Cloneable {
 
     private HypTrafo[] generators;
 
+    private AffineTransform euclideanTransform;
+
     protected Group(int[] euclideanAngles) {
 	this.euclideanAngles = euclideanAngles;
     }
 
     public int[] getEuclideanAngles() {
 	return euclideanAngles;
+    }
+
+    public void setEuclideanTransform(AffineTransform tr) {
+        euclideanTransform = tr;
+    }
+
+    public AffineTransform getEuclideanTransform() {
+        return euclideanTransform;
     }
 
     public boolean checkHyperbolicAngles(int[] hyperbolicAngles) {
