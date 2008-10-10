@@ -108,12 +108,12 @@
 	  <execution>
 	    <phase>package</phase>
 	    <goals><goal>copy-dependencies</goal></goals>
-	    <configuration>
-	      <includeScope>runtime</includeScope>
-	      <outputDirectory>${project.build.directory}</outputDirectory>
-	    </configuration>
 	  </execution>
 	</executions>
+	<configuration>
+	  <includeScope>runtime</includeScope>
+	  <outputDirectory>${project.build.directory}</outputDirectory>
+	</configuration>
       </plugin>
       <plugin>
 	<groupId>org.apache.maven.plugins</groupId>

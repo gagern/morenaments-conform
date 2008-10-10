@@ -121,6 +121,10 @@ public abstract class Group implements Cloneable {
         return new P4();
     }
 
+    public static Pmm pmm() {
+        return new Pmm();
+    }
+
     public enum EuclideanGroup {
         p6m, p6, p31m, p3m1, p3, p4g, p4m, p4,
         coloredLizards,

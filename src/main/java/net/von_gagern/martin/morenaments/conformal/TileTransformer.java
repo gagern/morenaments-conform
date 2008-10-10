@@ -178,11 +178,12 @@ public class TileTransformer implements Runnable {
         y /= hypCorners.size();
         Point2D c = new Point2D.Double(x, y);
         Triangle t1 = triangles.get(0), t2;
-        while (true) {
+        for (int i = 0; i < 100; ++i) {
             t2 = t1.neighbourContaining(c);
             if (t1 == t2) return t1;
             t1 = t2;
         }
+        return t1;
     }
 
     private <V> Mat3x3R triple(LocatedMesh<V> m, V c1, V c2, V c3) {
@@ -351,7 +352,7 @@ public class TileTransformer implements Runnable {
         return true;
     }
 
-    private void dumpTriangles(String name, LocatedMesh<?> mesh) {
+    public static void dumpTriangles(String name, LocatedMesh<?> mesh) {
         double inset = 0.01;
         double width = 600, height = 600;
         File debugDir = new File("debug");
