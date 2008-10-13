@@ -9,6 +9,10 @@
     </layout>
   </appender>
 
+  <category name="net.von_gagern.martin.morenaments.conformal">
+    <priority value="debug"/>
+  </category>
+
   <category name="net.von_gagern.martin.confoo">
     <priority value="debug"/>
   </category>

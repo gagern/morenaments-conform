@@ -4,15 +4,21 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import de.tum.in.gagern.hornamente.HypTrafo;
-import de.tum.in.gagern.hornamente.Vec2C;
+
+import org.apache.log4j.Logger;
+
 import net.von_gagern.martin.confoo.conformal.Conformal;
 import net.von_gagern.martin.confoo.conformal.Geometry;
 import net.von_gagern.martin.confoo.conformal.ResultMesh;
 import net.von_gagern.martin.confoo.mesh.MeshException;
+
+import de.tum.in.gagern.hornamente.HypTrafo;
+import de.tum.in.gagern.hornamente.Vec2C;
 import net.von_gagern.martin.morenaments.conformal.TileTransformer;
 
 abstract class OrbifoldBasedGroup extends Group {
+
+    private final Logger logger = Logger.getLogger(OrbifoldBasedGroup.class);
 
     protected OrbifoldBasedGroup(int... euclideanAngles) {
         super(euclideanAngles);
@@ -51,12 +57,14 @@ abstract class OrbifoldBasedGroup extends Group {
 
     private void init() {
         if (hypCorners != null) return;
+        logger.debug("Creating euclidean mesh");
         EucOrbifold eo = createEucOrbifold();
         eo.mesh(getEuclideanTransform());
         // TileTransformer.dumpTriangles("eucOrbifold", eo); // not located!
         Object[] sp = eo.getSpecialPoints();
         ResultMesh<Object> ho; // hyperbolic orbifold
         try {
+            logger.debug("Transforming to hyperbolic mesh");
             Conformal<Object> c = Conformal.getInstance(eo);
             Map<Object, Double> angles = getHypAngles(sp, hyperbolicAngles);
             c.setAngleErrorBound(1e-10);
@@ -73,7 +81,12 @@ abstract class OrbifoldBasedGroup extends Group {
         for (int i = 0; i < sp.length; ++i) {
             Object spi = sp[i];
             double x = ho.getX(spi), y = ho.getY(spi);
+            assert !Double.isNaN(x): "x must not be NaN";
+            assert !Double.isNaN(y): "y must not be NaN";
+            assert !Double.isInfinite(x): "x must be finite";
+            assert !Double.isInfinite(y): "y must be finite";
             sv[i] = new Vec2C(x, y, 1, 0);
+            logger.debug("Special point " + i + " at (" + x + ", " + y + ")");
         }
         hypCorners = constructCorners(sv);
     }
