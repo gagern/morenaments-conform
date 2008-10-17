@@ -44,22 +44,52 @@ public class Triangulation
 
     public void triangulatePoincare(List<Point2D> corners) {
         triangles = new ArrayList<Triangle>(corners.size() - 2);
-        Point2D a = corners.get(0), b = corners.get(1), c;
-        Edge bc, ac, ab = poincareEdge(a, b);
-        for (int i = 2; i < corners.size(); ++i) {
-            c = corners.get(i);
-            bc = poincareEdge(b, c);
-            ac = poincareEdge(a, c);
-            Triangle t = new Triangle(a, b, c, bc, ac, ab);
-            ab.setLeft(t);
-            bc.setLeft(t);
-            ac.setRight(t);
-            triangles.add(t);
-            b = c;
-            ab = ac;
-        }
+        delaunay(corners);
         assert triangles.size() == corners.size() - 2;
         triangulateImpl();
+    }
+
+    private Edge delaunay(List<Point2D> corners) {
+        Point2D a = corners.get(corners.size() - 1), b = corners.get(0);
+        Edge ab = poincareEdge(a, b);
+        if (corners.size() > 2) {
+            double ax = a.getX(), ay = a.getY();
+            double bx = b.getX() - ax, by = b.getY() - ay, bz = bx*bx + by*by;
+            // Find c, the corner with least violation (= maximum determinant)
+            // of circumcircle predicate
+            double maxDet = Double.NEGATIVE_INFINITY;
+            int ci = -1;
+            for (int i = 1; i < corners.size() - 1; ++i) {
+                Point2D c = corners.get(i);
+                double cx = c.getX() - ax, cy = c.getY() - ay;
+                double cz = cx*cx + cy*cy;
+                // Find d, causing maximum violation (= minimum determinant)
+                // for triangle abc
+                double minDet = Double.POSITIVE_INFINITY;
+                for (int j = 2; j < corners.size(); ++j) {
+                    if (j == i) continue;
+                    Point2D d = corners.get(j);
+                    double dx = d.getX() - ax, dy = d.getY() - ay;
+                    double dz = dx*dx + dy*dy;
+                    double det = bx*cy*dz + by*cz*dx + bz*cx*dy
+                               - bx*cz*dy - by*cx*dz - bz*cy*dx;
+                    if (minDet > det)
+                        minDet = det;
+                }
+                if (maxDet > minDet) continue;
+                maxDet = minDet;
+                ci = i;
+            }
+            Point2D c = corners.get(ci);
+            Edge bc = delaunay(corners.subList(0, ci + 1));
+            Edge ca = delaunay(corners.subList(ci, corners.size()));
+            Triangle t = new Triangle(a, b, c, bc, ca, ab);
+            ab.setLeft(t);
+            bc.setRight(t);
+            ca.setRight(t);
+            triangles.add(t);
+        }
+        return ab;
     }
 
     public void triangulate(Collection<Triangle> triangles) {
