@@ -17,6 +17,7 @@ import net.von_gagern.martin.confoo.mesh.MetricMesh;
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;
 import net.von_gagern.martin.morenaments.conformal.TileTransformer;
+import net.von_gagern.martin.morenaments.conformal.triangulate.EucOrbifold;
 import net.von_gagern.martin.morenaments.conformal.triangulate.Triangulation;
 
 abstract class OrbifoldBasedGroup extends Group {

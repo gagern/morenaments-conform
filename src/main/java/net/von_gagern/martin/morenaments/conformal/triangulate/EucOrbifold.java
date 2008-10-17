@@ -1,4 +1,4 @@
-package net.von_gagern.martin.morenaments.conformal.groups;
+package net.von_gagern.martin.morenaments.conformal.triangulate;
 
 import java.awt.Point;
 import java.awt.geom.AffineTransform;

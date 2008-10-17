@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;
+import net.von_gagern.martin.morenaments.conformal.triangulate.EucOrbifold;
 
 class P2 extends OrbifoldBasedGroup {
 
