@@ -57,11 +57,11 @@ class Pmm extends OrbifoldBasedGroup {
             super(1, 1);
             specialPoints = new Object[] {
                 vs[0][0],
-                vs[MESH_LENGTH][0],
-                vs[MESH_LENGTH][MESH_LENGTH],
-                vs[0][MESH_LENGTH]
+                vs[UNIT][0],
+                vs[UNIT][UNIT],
+                vs[0][UNIT]
             };
-            setCenterCoordinates(HALF_LENGTH, HALF_LENGTH);
+            setCenterCoordinates(HALF, HALF);
         }
 
     }

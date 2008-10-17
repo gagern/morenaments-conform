@@ -4,7 +4,9 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
+
 import de.tum.in.gagern.hornamente.HypTrafo;
+import net.von_gagern.martin.morenaments.conformal.triangulate.Triangulation;
 
 public abstract class Group implements Cloneable {
 
@@ -89,6 +91,10 @@ public abstract class Group implements Cloneable {
         }
     }
 
+    public Triangulation getTriangulation() {
+        return null;
+    }
+
     public static P6m p6m() {
         return new P6m();
     }
@@ -123,6 +129,10 @@ public abstract class Group implements Cloneable {
 
     public static Pmm pmm() {
         return new Pmm();
+    }
+
+    public static P2 p2() {
+        return new P2();
     }
 
     public enum EuclideanGroup {

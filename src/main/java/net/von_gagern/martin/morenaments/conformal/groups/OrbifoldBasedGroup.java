@@ -1,5 +1,6 @@
 package net.von_gagern.martin.morenaments.conformal.groups;
 
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,10 +12,12 @@ import net.von_gagern.martin.confoo.conformal.Conformal;
 import net.von_gagern.martin.confoo.conformal.Geometry;
 import net.von_gagern.martin.confoo.conformal.ResultMesh;
 import net.von_gagern.martin.confoo.mesh.MeshException;
+import net.von_gagern.martin.confoo.mesh.MetricMesh;
 
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;
 import net.von_gagern.martin.morenaments.conformal.TileTransformer;
+import net.von_gagern.martin.morenaments.conformal.triangulate.Triangulation;
 
 abstract class OrbifoldBasedGroup extends Group {
 
@@ -28,8 +31,10 @@ abstract class OrbifoldBasedGroup extends Group {
 
     protected Vec2C[] hypEdges;
 
+    protected double eucBaseAngle = Double.NaN;
+
     protected HypTrafo[] constructInsidenessChecks() {
-        init();
+        if (hypCorners == null) init();
         final int n = hypCorners.length;
         HypTrafo[] edges = new HypTrafo[n];
         for (int i = 0; i < n; ++i) {
@@ -48,15 +53,21 @@ abstract class OrbifoldBasedGroup extends Group {
     }
 
     public List<Point2D> getHypTileCorners() {
-        init();
-        ArrayList corners = new ArrayList(hypCorners.length);
+        if (hypCorners == null) init();
+        ArrayList<Point2D> corners = new ArrayList<Point2D>(hypCorners.length);
         for (int i = 0; i < hypCorners.length; ++i)
             corners.add(hypCorners[i].dehomogenize(new Point2D.Double()));
+        if (logger.isDebugEnabled())
+            for (Point2D p: corners)
+                logger.debug("Corner at (" + p.getX() + ", " + p.getY() + ")");
         return corners;
     }
 
     private void init() {
-        if (hypCorners != null) return;
+        getTriangulation();
+    }
+
+    @Override public Triangulation getTriangulation() {
         logger.debug("Creating euclidean mesh");
         EucOrbifold eo = createEucOrbifold();
         eo.mesh(getEuclideanTransform());
@@ -89,6 +100,8 @@ abstract class OrbifoldBasedGroup extends Group {
             logger.debug("Special point " + i + " at (" + x + ", " + y + ")");
         }
         hypCorners = constructCorners(sv);
+
+        throw new UnsupportedOperationException("Not implemented");        
     }
 
     protected abstract EucOrbifold createEucOrbifold();
@@ -98,11 +111,37 @@ abstract class OrbifoldBasedGroup extends Group {
     protected abstract Map<Object, Double>
         getHypAngles(Object[] specialPoints, int[] hyperbolicAngles);
 
+    @Override public void setEuclideanTransform(AffineTransform tr) {
+        super.setEuclideanTransform(tr);
+        double ax = tr.getScaleX(), ay = tr.getShearY();
+        double bx = tr.getShearX(), by = tr.getScaleY();
+        double angle = ax*by - bx*ay;
+        angle /= Math.hypot(ax, ay);
+        angle /= Math.hypot(bx, by);
+        angle = Math.asin(angle);
+        eucBaseAngle = angle;
+    }
+
+    protected static Vec2C rotate(Vec2C point, Vec2C center, int angleCount) {
+        HypTrafo t1 = new HypTrafo(center, false);
+        HypTrafo rot = HypTrafo.getRotation(Math.PI*2/angleCount);
+        HypTrafo t2 = t1.getInverse();
+        HypTrafo t = HypTrafo.product(t1, rot, t2);
+        return t.transform(point, new Vec2C());
+    }
+
     protected HypTrafo reflection(int edgeIndex) {
         HypTrafo insideness = getInsidenessChecks()[edgeIndex];
         return HypTrafo.product(insideness.getInverse(),
                                 HypTrafo.getConjugation(),
                                 insideness);
+    }
+
+    protected HypTrafo rotation(int cornerIndex, int angleCount) {
+        HypTrafo t1 = new HypTrafo(hypCorners[cornerIndex], false);
+        HypTrafo rot = HypTrafo.getRotation(Math.PI*2/angleCount);
+        HypTrafo t2 = t1.getInverse();
+        return HypTrafo.product(t1, rot, t2);
     }
 
 }

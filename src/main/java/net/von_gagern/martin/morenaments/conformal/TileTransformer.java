@@ -53,6 +53,9 @@ public class TileTransformer implements Runnable {
     }
 
     public void transform() throws MeshException {
+        hypMesh = g.getTriangulation();
+        if (hypMesh != null) return;
+
         // Approximate hyperbolic tile by a triangulated mesh
         logger.debug("Creating hyperbolic mesh");
         hypCorners = g.getHypTileCorners();
@@ -363,7 +366,11 @@ public class TileTransformer implements Runnable {
             logger.debug("Creating mesh");
             Mesh2D m2d = new Mesh2D(mesh);
             logger.debug("Mesh created, getting boundary");
-            Rectangle2D rect = m2d.getBoundary().getBounds2D();
+            // Rectangle2D rect = m2d.getBoundary().getBounds2D();
+            Rectangle2D rect = new Rectangle2D.Double();
+            for (Triangle2D t: m2d)
+                for (int i = 0; i < 3; ++i)
+                    rect.add(t.getCorner(i));
             logger.debug("Got boundary rect");
             if (inset > 0) {
                 rect.add(rect.getMinX() - inset, rect.getMinY() - inset);

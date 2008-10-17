@@ -12,9 +12,11 @@ import net.von_gagern.martin.confoo.mesh.SimpleTriangle;
 
 public abstract class EucOrbifold implements MetricMesh<Object> {
 
-    public static final int MESH_LENGTH = 36;
+    public static final int UNIT = 36;
 
-    public static final int HALF_LENGTH = MESH_LENGTH/2;
+    public static final int HALF = UNIT/2;
+
+    public static final int DOUBLE = UNIT*2;
 
     protected Object[][] vs;
 
@@ -29,8 +31,8 @@ public abstract class EucOrbifold implements MetricMesh<Object> {
     private HashMap<VertexPair, Double> es;
 
     protected EucOrbifold(int w, int h) {
-        w = MESH_LENGTH*w + 1;
-        h = MESH_LENGTH*h + 1;
+        w = UNIT*w + 1;
+        h = UNIT*h + 1;
         vs = new Point[w][h];
         for (int x = 0; x < w; ++x)
             for (int y = 0; y < h; ++y)
@@ -127,42 +129,6 @@ public abstract class EucOrbifold implements MetricMesh<Object> {
         @Override public int hashCode() {
             int c1 = v1.hashCode(), c2 = v2.hashCode();
             return c1 ^ c2 ^ (17*(c1 & c2));
-        }
-
-    }
-
-    public static MetricMesh<?> p2(AffineTransform tr) {
-        return (new P2(MESH_LENGTH)).mesh(tr);
-    }
-
-    public static MetricMesh<?> pmg(AffineTransform tr) {
-        return (new Pmg(MESH_LENGTH)).mesh(tr);
-    }
-
-    public static MetricMesh<?> pgg(AffineTransform tr) {
-        return (new Pgg(MESH_LENGTH)).mesh(tr);
-    }
-
-    public static MetricMesh<?> cmm(AffineTransform tr) {
-        // TODO: tweak tr to account for rotated fundamental cell
-        return (new Cmm(MESH_LENGTH)).mesh(tr);
-    }
-
-    static class P2 extends EucOrbifold {
-
-        public P2(int length) {
-            super(length, length/2);
-            assert (length & 1) == 0: "length must be even";
-            int half = length/2;
-            for (int i = 0; i <= half; ++i) {
-                vs[length][i] = vs[0][i]; // glue together outer boundaries
-                vs[length - i][0] = vs[i][0]; // fold and glue lower boundary
-                vs[length - i][half] = vs[i][half]; // same for upper boundary
-            }
-            specialPoints = new Object[] {
-                vs[0][0], vs[half][0], vs[half][half], vs[0][half]
-            };
-            setCenterCoordinates(half/2, half/2);
         }
 
     }
