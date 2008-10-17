@@ -126,7 +126,7 @@ class SvgWriter {
         for (Line2D e: edges) {
             buf.append(moveto).append(format(e.getX1()));
             buf.append(' ').append(format(e.getY1()));
-            buf.append("L ").append(format(e.getX2()));
+            buf.append(" L ").append(format(e.getX2()));
             buf.append(' ').append(format(e.getY2()));
             moveto = "\nM ";
         }
