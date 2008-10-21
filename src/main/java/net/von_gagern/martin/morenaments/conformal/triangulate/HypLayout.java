@@ -53,23 +53,49 @@ class HypLayout {
      * Layout the initial triangle.
      * @param t the first triangle to be layed out
      */
-    protected Triangle layoutStart(Triangle t) {
-        return null;
-        /*
-        Angle a = t.getAngles().get(0);
-        Vertex v1 = a.vertex, v2 = a.nextVertex, v3 = a.prevVertex;
-        Edge e12 = a.nextEdge;
-        double l12 = e12.length;
+    protected Triangle layoutStart(Triangle tOrb) {
+        Vertex[] vs = new Vertex[3];
+        Edge[] es = new Edge[3];
+        for (int i = 0; i < 3; ++i) {
+            vs[i] = new Vertex();
+            vs[i].setOrbifoldElement(tOrb.vertices().get(i));
+        }
+        for (int i = 0; i < 3; ++i) {
+            es[i] = new Edge(vs[(i + 1)%3], vs[(i + 2)%3]);
+            es[i].setOrbifoldElement(tOrb.edges().get(i));
+        }
 
-        // set locations and edge positions
-        HypEdgePos pos1 = new HypEdgePos();
-        pos1.setVertex(v1);
-        v1.offerLocation(0, 0);
-        e12.offerHypPos(pos1);
-        Point2D p2 = pos1.derive(v2, l12).dehomogenize();
-        v2.offerLocation(p2.getX(), p2.getY());
-        layoutEdge(e12, t);
-        */
+        Vertex aOrb = tOrb.vertices().get(0);
+        Vertex bOrb = tOrb.vertices().get(1);
+        Vertex cOrb = tOrb.vertices().get(2);
+        Edge bcOrb = tOrb.edges().get(0);
+        Edge caOrb = tOrb.edges().get(1);
+        Edge abOrb = tOrb.edges().get(2);
+        double bcLen = bcOrb.getLength();
+        double caLen = caOrb.getLength();
+        double abLen = abOrb.getLength();
+
+        HypEdgePos abPos, bcPos, caPos;
+        abPos = new HypEdgePos();
+        abPos.setVertex(vs[0]);
+        es[2].setHypPos(abPos);
+        double beta = hypAngle(abLen, bcLen, caLen);
+        bcPos = abPos.derive(bOrb, abLen, -beta);
+        es[0].setHypPos(bcPos);
+        double alpha = hypAngle(caLen, abLen, bcLen);
+        caPos = abPos.derive(cOrb, abLen, alpha);
+        es[1].setHypPos(caPos);
+
+        vs[0].setLocation(0, 0);
+        vs[1].setLocation(abPos.derive(bOrb, abLen).dehomogenize());
+        vs[2].setLocation(caPos.derive(cOrb, caLen).dehomogenize());
+
+        Triangle tFlat = new Triangle(vs[0], vs[1], vs[2],
+                                      es[0], es[1], es[2]);
+        tFlat.registerWithEdges();
+        tFlat.setOrbifoldElement(tOrb);
+        triangles.add(tFlat);
+        return tFlat;
     }
 
     /**
@@ -151,8 +177,8 @@ class HypLayout {
         }
 
         if (cNeedPos) {
-            Point2D caC = caPos.derive(cOrb, caOrb.getLength()).dehomogenize();
-            Point2D bcC = bcPos.derive(cOrb, bcOrb.getLength()).dehomogenize();
+            Point2D caC = caPos.derive(cOrb, caLen).dehomogenize();
+            Point2D bcC = bcPos.derive(cOrb, bcLen).dehomogenize();
             double x = (caC.getX() + bcC.getX())/2;
             double y = (caC.getY() + bcC.getY())/2;
             assert !Double.isNaN(x): "x must not be NaN";
