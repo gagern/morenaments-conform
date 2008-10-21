@@ -23,6 +23,13 @@ public class Triangulation
 
     private PriorityQueue<Edge> q;
 
+    public Triangulation() {
+    }
+
+    public Triangulation(List<Triangle> triangles) {
+        this.triangles = triangles;
+    }
+
     public double getMaxLength() {
         return Math.sqrt(maxLengthSq);
     }
@@ -92,11 +99,6 @@ public class Triangulation
             triangles.add(t);
         }
         return ab;
-    }
-
-    public void triangulate(Collection<Triangle> triangles) {
-        this.triangles = new ArrayList<Triangle>(triangles);
-        triangulateImpl();
     }
 
     private void triangulateImpl() {

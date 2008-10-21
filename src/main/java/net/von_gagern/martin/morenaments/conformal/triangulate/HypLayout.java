@@ -35,7 +35,7 @@ class HypLayout {
      * Calculate layout by determining suitable vertex coordinates.
      * This is the main method of this class.
      */
-    public void layout() {
+    public Triangulation layout() {
         // Sadly ArrayDeque was added only in java 1.6, so we won't use it yet
         Queue<Triangle> q = new LinkedList<Triangle>();
         q.add(layoutStart(orbifoldCenter));
@@ -47,6 +47,7 @@ class HypLayout {
                     q.add(t2);
             }
         }
+        return new Triangulation(triangles);
     }
 
     /**
