@@ -18,6 +18,12 @@ class Edge {
 
     private Edge secondPart;
 
+    private Edge orbifoldElement;
+
+    private double length = Double.NaN;
+
+    private HypEdgePos hypPos;
+
     public Edge(Vertex p1, Vertex p2) {
         this.p1 = p1;
         this.p2 = p2;
@@ -109,6 +115,37 @@ class Edge {
             return right;
         assert right == t;
         return left;
+    }
+
+    public Vertex otherVertex(Vertex v) {
+        if (p1 == v)
+            return p2;
+        assert p2 == v;
+        return p1;
+    }
+
+    public Edge getOrbifoldElement() {
+        return orbifoldElement;
+    }
+
+    public void setOrbifoldElement(Edge orbifoldElement) {
+        this.orbifoldElement = orbifoldElement;
+    }
+
+    public double getLength() {
+        return length;
+    }
+
+    public void setLength(double length) {
+        this.length = length;
+    }
+
+    public HypEdgePos getHypPos() {
+        return hypPos;
+    }
+
+    public void setHypPos(HypEdgePos hypPos) {
+        this.hypPos = hypPos;
     }
 
 }

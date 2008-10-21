@@ -14,6 +14,8 @@ public class Triangle implements CorneredTriangle<Vertex> {
 
     private Mat3x3R proj;
 
+    private Triangle orbifoldElement;
+
     public Triangle(Vertex a, Vertex b, Vertex c,
                     Edge bc, Edge ca, Edge ab) {
         assert ccw(a, b, c) > 0 : "triangle must have positive orientation";
@@ -57,6 +59,30 @@ public class Triangle implements CorneredTriangle<Vertex> {
             minCcw = ccw;
         }
         return res;
+    }
+
+    public void registerWithEdges() {
+        for (int i = 0; i < 3; ++i)
+            es.get(i).setTriangle(vs.get((i + 1)%3), vs.get((i + 2)%3), this);
+    }
+
+    public Edge otherEdge(Edge e, Vertex v) {
+        int vi = vs.indexOf(v);
+        if (vi < 0)
+            throw new IllegalArgumentException("not a vertex of this triangle");
+        Edge e1 = es.get((vi + 1)%3), e2 = es.get((vi + 2)%3);
+        if (e1 == e)
+            return e2;
+        assert e2 == e;
+        return e1;
+    }
+
+    public Triangle getOrbifoldElement() {
+        return orbifoldElement;
+    }
+
+    public void setOrbifoldElement(Triangle orbifoldElement) {
+        this.orbifoldElement = orbifoldElement;
     }
 
     public static double ccw(Point2D p1, Point2D p2, Point2D p3) {
