@@ -6,15 +6,15 @@ import java.util.List;
 import net.von_gagern.martin.confoo.mesh.CorneredTriangle;
 import net.von_gagern.martin.morenaments.conformal.Mat3x3R;
 
-public class Triangle implements CorneredTriangle<Point2D> {
+public class Triangle implements CorneredTriangle<Vertex> {
 
-    private List<Point2D> vs;
+    private List<Vertex> vs;
 
     private List<Edge> es;
 
     private Mat3x3R proj;
 
-    public Triangle(Point2D a, Point2D b, Point2D c,
+    public Triangle(Vertex a, Vertex b, Vertex c,
                     Edge bc, Edge ca, Edge ab) {
         assert ccw(a, b, c) > 0 : "triangle must have positive orientation";
         vs = Arrays.asList(a, b, c);
@@ -25,11 +25,11 @@ public class Triangle implements CorneredTriangle<Point2D> {
         return es;
     }
 
-    public List<Point2D> vertices() {
+    public List<Vertex> vertices() {
         return vs;
     }
 
-    public Point2D getCorner(int i) {
+    public Vertex getCorner(int i) {
         return vs.get(i);
     }
 

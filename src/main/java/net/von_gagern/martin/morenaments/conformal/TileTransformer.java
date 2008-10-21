@@ -32,6 +32,7 @@ import de.tum.in.gagern.hornamente.Vec3R;
 import net.von_gagern.martin.morenaments.conformal.groups.Group;
 import net.von_gagern.martin.morenaments.conformal.triangulate.Triangle;
 import net.von_gagern.martin.morenaments.conformal.triangulate.Triangulation;
+import net.von_gagern.martin.morenaments.conformal.triangulate.Vertex;
 
 public class TileTransformer implements Runnable {
 
@@ -96,8 +97,8 @@ public class TileTransformer implements Runnable {
         Mat3x3R affine = dstCorners.multiply(srcCorners.getInverse());
         //affine = diag(1, 1, 1);
         for (Triangle t: hypMesh) {
-            List<Point2D> vs = t.vertices();
-            Point2D v1 = vs.get(0), v2 = vs.get(1), v3 = vs.get(2);
+            List<Vertex> vs = t.vertices();
+            Vertex v1 = vs.get(0), v2 = vs.get(1), v3 = vs.get(2);
             Mat3x3R hypTriple = triple(hypMesh, v1, v2, v3);
             Mat3x3R eucTriple = triple(eucMesh, v1, v2, v3);
             Mat3x3R diag = diag(Math.exp(-eucMesh.getU(v1)),

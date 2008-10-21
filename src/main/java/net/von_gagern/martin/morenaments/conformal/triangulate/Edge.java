@@ -4,34 +4,34 @@ import java.awt.geom.Point2D;
 
 class Edge {
 
-    private Point2D p1;
+    private Vertex p1;
 
-    private Point2D p2;
+    private Vertex p2;
 
     private Triangle left;
 
     private Triangle right;
 
-    private Point2D center;
+    private Vertex center;
 
     private Edge firstPart;
 
     private Edge secondPart;
 
-    public Edge(Point2D p1, Point2D p2) {
+    public Edge(Vertex p1, Vertex p2) {
         this.p1 = p1;
         this.p2 = p2;
     }
 
-    public Point2D getP1() {
+    public Vertex getP1() {
         return p1;
     }
 
-    public Point2D getP2() {
+    public Vertex getP2() {
         return p2;
     }
 
-    public Point2D getCenter() {
+    public Vertex getCenter() {
         if (center == null)
             center = createCenter();
         return center;
@@ -49,7 +49,7 @@ class Edge {
         return secondPart;
     }
 
-    public Edge getPart(Point2D endpoint) {
+    public Edge getPart(Vertex endpoint) {
         if (endpoint == p1) {
             return getFirstPart();
         }
@@ -59,9 +59,9 @@ class Edge {
         }
     }
 
-    protected Point2D createCenter() {
-        return new Point2D.Double((p1.getX() + p2.getX())/2.,
-                                  (p1.getY() + p2.getY())/2.);
+    protected Vertex createCenter() {
+        return new Vertex((p1.getX() + p2.getX())/2.,
+                          (p1.getY() + p2.getY())/2.);
     }
 
     protected Edge createFirstPart() {
@@ -88,7 +88,7 @@ class Edge {
         right = t;
     }
 
-    public void setTriangle(Point2D p1, Point2D p2, Triangle t) {
+    public void setTriangle(Vertex p1, Vertex p2, Triangle t) {
         if (this.p1 == p1) {
             assert this.p2 == p2;
             left = t;
