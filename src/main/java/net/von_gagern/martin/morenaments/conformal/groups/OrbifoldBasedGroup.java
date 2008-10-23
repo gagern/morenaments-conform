@@ -17,6 +17,7 @@ import net.von_gagern.martin.confoo.mesh.MetricMesh;
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;
 import net.von_gagern.martin.morenaments.conformal.TileTransformer;
+import net.von_gagern.martin.morenaments.conformal.triangulate.Edge;
 import net.von_gagern.martin.morenaments.conformal.triangulate.EucOrbifold;
 import net.von_gagern.martin.morenaments.conformal.triangulate.Triangulation;
 import net.von_gagern.martin.morenaments.conformal.triangulate.Vertex;
@@ -80,7 +81,7 @@ abstract class OrbifoldBasedGroup extends Group {
             logger.debug("Transforming to hyperbolic mesh");
             Conformal<Vertex> c = Conformal.getInstance(eo);
             Map<Vertex, Double> angles = getHypAngles(sp, hyperbolicAngles);
-            c.setAngleErrorBound(1e-10);
+            c.setAngleErrorBound(1e-12);
             c.fixedBoundaryCurvature(angles);
             c.setOutputGeometry(Geometry.HYPERBOLIC);
             c.setLayoutStartTriangle(eo.getCenter());
@@ -90,6 +91,7 @@ abstract class OrbifoldBasedGroup extends Group {
         catch (MeshException e) {
             throw new RuntimeException(e);
         }
+
         Vec2C[] sv = new Vec2C[sp.length];
         for (int i = 0; i < sp.length; ++i) {
             Vertex spi = sp[i];
@@ -102,6 +104,12 @@ abstract class OrbifoldBasedGroup extends Group {
             logger.debug("Special point " + i + " at (" + x + ", " + y + ")");
         }
         hypCorners = constructCorners(sv);
+
+        // Change lengths stored in orbifold edges from euclidean to
+        // hyperbolic. The euclidean aspects of the orbifold are
+        // stored in the projective transformations of the triangles.
+        for (Edge e: eo.getEdges())
+            e.setLength(ho.edgeLength(e.getP1(), e.getP2()));
 
         throw new UnsupportedOperationException("Not implemented");        
     }

@@ -1,7 +1,7 @@
 package net.von_gagern.martin.morenaments.conformal.triangulate;
 
 import java.awt.geom.Point2D;
-import java.util.AbstractList;
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -13,20 +13,20 @@ import de.tum.in.gagern.hornamente.PoincareLine;
 import net.von_gagern.martin.confoo.mesh.LocatedMesh;
 
 public class Triangulation
-    extends AbstractList<Triangle>
+    extends AbstractCollection<Triangle>
     implements LocatedMesh<Vertex>
 {
 
     private double maxLengthSq = 1e-3;
 
-    private List<Triangle> triangles;
+    private Collection<Triangle> triangles;
 
     private PriorityQueue<Edge> q;
 
     public Triangulation() {
     }
 
-    public Triangulation(List<Triangle> triangles) {
+    public Triangulation(Collection<Triangle> triangles) {
         this.triangles = triangles;
     }
 
@@ -160,10 +160,6 @@ public class Triangulation
         enqueue(mc);
     }
 
-    public Triangle get(int index) {
-        return triangles.get(index);
-    }
-    
     public int size() {
         return triangles.size();
     }

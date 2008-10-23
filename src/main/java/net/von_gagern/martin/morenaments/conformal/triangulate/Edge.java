@@ -2,7 +2,7 @@ package net.von_gagern.martin.morenaments.conformal.triangulate;
 
 import java.awt.geom.Point2D;
 
-class Edge {
+public class Edge {
 
     private Vertex p1;
 

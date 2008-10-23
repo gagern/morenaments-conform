@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -172,7 +173,7 @@ public class TileTransformer implements Runnable {
         return new Mesh2D(l);
     }
 
-    private Triangle findCenter(List<Triangle> triangles) {
+    private Triangle findCenter(Collection<Triangle> triangles) {
         double x = 0, y = 0;
         for (Point2D p: hypCorners) {
             x += p.getX();
@@ -181,7 +182,7 @@ public class TileTransformer implements Runnable {
         x /= hypCorners.size();
         y /= hypCorners.size();
         Point2D c = new Point2D.Double(x, y);
-        Triangle t1 = triangles.get(0), t2;
+        Triangle t1 = triangles.iterator().next(), t2;
         for (int i = 0; i < 100; ++i) {
             t2 = t1.neighbourContaining(c);
             if (t1 == t2) return t1;
