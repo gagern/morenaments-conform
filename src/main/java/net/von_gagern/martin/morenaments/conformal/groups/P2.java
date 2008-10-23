@@ -5,6 +5,7 @@ import java.util.Map;
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;
 import net.von_gagern.martin.morenaments.conformal.triangulate.EucOrbifold;
+import net.von_gagern.martin.morenaments.conformal.triangulate.Vertex;
 
 class P2 extends OrbifoldBasedGroup {
 
@@ -69,9 +70,9 @@ class P2 extends OrbifoldBasedGroup {
         return corners;
     }
 
-    protected Map<Object, Double>
-        getHypAngles(Object[] specialPoints, int[] hyperbolicAngles) {
-        Map<Object, Double> angles = new HashMap<Object, Double>(6);
+    protected Map<Vertex, Double>
+        getHypAngles(Vertex[] specialPoints, int[] hyperbolicAngles) {
+        Map<Vertex, Double> angles = new HashMap<Vertex, Double>(6);
         for (int i = 0; i < 4; ++i)
             angles.put(specialPoints[i], Math.PI*2/hyperbolicAngles[i]);
         return angles;
@@ -86,7 +87,7 @@ class P2 extends OrbifoldBasedGroup {
                 vs[DOUBLE - i][0] = vs[i][0]; // fold and glue lower boundary
                 vs[DOUBLE - i][UNIT] = vs[i][UNIT]; // same for upper boundary
             }
-            specialPoints = new Object[] {
+            specialPoints = new Vertex[] {
                 vs[0][0],
                 vs[UNIT][0],
                 vs[UNIT][UNIT],

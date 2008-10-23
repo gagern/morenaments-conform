@@ -19,6 +19,7 @@ import de.tum.in.gagern.hornamente.Vec2C;
 import net.von_gagern.martin.morenaments.conformal.TileTransformer;
 import net.von_gagern.martin.morenaments.conformal.triangulate.EucOrbifold;
 import net.von_gagern.martin.morenaments.conformal.triangulate.Triangulation;
+import net.von_gagern.martin.morenaments.conformal.triangulate.Vertex;
 
 abstract class OrbifoldBasedGroup extends Group {
 
@@ -73,12 +74,12 @@ abstract class OrbifoldBasedGroup extends Group {
         EucOrbifold eo = createEucOrbifold();
         eo.mesh(getEuclideanTransform());
         // TileTransformer.dumpTriangles("eucOrbifold", eo); // not located!
-        Object[] sp = eo.getSpecialPoints();
-        ResultMesh<Object> ho; // hyperbolic orbifold
+        Vertex[] sp = eo.getSpecialPoints();
+        ResultMesh<Vertex> ho; // hyperbolic orbifold
         try {
             logger.debug("Transforming to hyperbolic mesh");
-            Conformal<Object> c = Conformal.getInstance(eo);
-            Map<Object, Double> angles = getHypAngles(sp, hyperbolicAngles);
+            Conformal<Vertex> c = Conformal.getInstance(eo);
+            Map<Vertex, Double> angles = getHypAngles(sp, hyperbolicAngles);
             c.setAngleErrorBound(1e-10);
             c.fixedBoundaryCurvature(angles);
             c.setOutputGeometry(Geometry.HYPERBOLIC);
@@ -91,7 +92,7 @@ abstract class OrbifoldBasedGroup extends Group {
         }
         Vec2C[] sv = new Vec2C[sp.length];
         for (int i = 0; i < sp.length; ++i) {
-            Object spi = sp[i];
+            Vertex spi = sp[i];
             double x = ho.getX(spi), y = ho.getY(spi);
             assert !Double.isNaN(x): "x must not be NaN";
             assert !Double.isNaN(y): "y must not be NaN";
@@ -109,8 +110,8 @@ abstract class OrbifoldBasedGroup extends Group {
 
     protected abstract Vec2C[] constructCorners(Vec2C[] specialPoints);
 
-    protected abstract Map<Object, Double>
-        getHypAngles(Object[] specialPoints, int[] hyperbolicAngles);
+    protected abstract Map<Vertex, Double>
+        getHypAngles(Vertex[] specialPoints, int[] hyperbolicAngles);
 
     @Override public void setEuclideanTransform(AffineTransform tr) {
         super.setEuclideanTransform(tr);

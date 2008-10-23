@@ -5,6 +5,7 @@ import java.util.Map;
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;
 import net.von_gagern.martin.morenaments.conformal.triangulate.EucOrbifold;
+import net.von_gagern.martin.morenaments.conformal.triangulate.Vertex;
 
 class Pmm extends OrbifoldBasedGroup {
 
@@ -44,9 +45,9 @@ class Pmm extends OrbifoldBasedGroup {
         return specialPoints;
     }
 
-    protected Map<Object, Double>
-        getHypAngles(Object[] specialPoints, int[] hyperbolicAngles) {
-        Map<Object, Double> angles = new HashMap<Object, Double>(6);
+    protected Map<Vertex, Double>
+        getHypAngles(Vertex[] specialPoints, int[] hyperbolicAngles) {
+        Map<Vertex, Double> angles = new HashMap<Vertex, Double>(6);
         for (int i = 0; i < 4; ++i)
             angles.put(specialPoints[i], Math.PI/hyperbolicAngles[i]);
         return angles;
@@ -56,7 +57,7 @@ class Pmm extends OrbifoldBasedGroup {
 
         public Orbifold() {
             super(1, 1);
-            specialPoints = new Object[] {
+            specialPoints = new Vertex[] {
                 vs[0][0],
                 vs[UNIT][0],
                 vs[UNIT][UNIT],
