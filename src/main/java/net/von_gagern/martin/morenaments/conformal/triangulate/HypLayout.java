@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;
 
-class HypLayout {
+public class HypLayout {
 
     /**
      * Log4j logger for customizable logging and reporting.
@@ -203,6 +203,7 @@ class HypLayout {
         }
         tOutFlat.registerWithEdges();
         tOutFlat.setOrbifoldElement(tOutOrb);
+        tOutFlat.setProj(tOutOrb.getProj());
         triangles.add(tOutFlat);
         return tOutFlat;
     }

@@ -3,6 +3,7 @@ package net.von_gagern.martin.morenaments.conformal.groups;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -16,9 +17,12 @@ import net.von_gagern.martin.confoo.mesh.MetricMesh;
 
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;
+import net.von_gagern.martin.morenaments.conformal.Mat3x3R;
 import net.von_gagern.martin.morenaments.conformal.TileTransformer;
 import net.von_gagern.martin.morenaments.conformal.triangulate.Edge;
 import net.von_gagern.martin.morenaments.conformal.triangulate.EucOrbifold;
+import net.von_gagern.martin.morenaments.conformal.triangulate.HypLayout;
+import net.von_gagern.martin.morenaments.conformal.triangulate.Triangle;
 import net.von_gagern.martin.morenaments.conformal.triangulate.Triangulation;
 import net.von_gagern.martin.morenaments.conformal.triangulate.Vertex;
 
@@ -110,8 +114,24 @@ abstract class OrbifoldBasedGroup extends Group {
         // stored in the projective transformations of the triangles.
         for (Edge e: eo.getEdges())
             e.setLength(ho.edgeLength(e.getP1(), e.getP2()));
-
-        throw new UnsupportedOperationException("Not implemented");        
+        HypLayout hl = new HypLayout(eo.getCenter(),
+                                     Arrays.asList(getInsidenessChecks()));
+        Triangulation flat = hl.layout();
+        Mat3x3R affine = new Mat3x3R(affineOrbifoldTransform());
+        for (Triangle t: flat) {
+            List<Vertex> vs = t.vertices();
+            Vertex v1 = vs.get(0), v2 = vs.get(1), v3 = vs.get(2);
+            Mat3x3R hypTriple = TileTransformer.triple(flat, v1, v2, v3);
+            Mat3x3R eucTriple = t.getProj();
+            Mat3x3R diag = TileTransformer.diag(
+                Math.exp(ho.getU(v1.getOrbifoldElement())),
+                Math.exp(ho.getU(v2.getOrbifoldElement())),
+                Math.exp(ho.getU(v3.getOrbifoldElement())));
+            Mat3x3R m = affine.multiply(eucTriple).multiply(diag)
+                              .multiply(hypTriple.getInverse());
+            t.setProj(m);
+        }
+        return flat;
     }
 
     protected abstract EucOrbifold createEucOrbifold();
@@ -120,6 +140,10 @@ abstract class OrbifoldBasedGroup extends Group {
 
     protected abstract Map<Vertex, Double>
         getHypAngles(Vertex[] specialPoints, int[] hyperbolicAngles);
+
+    protected AffineTransform affineOrbifoldTransform() {
+        return new AffineTransform(.5, 0, 0, .5, 0, 0);
+    }
 
     @Override public void setEuclideanTransform(AffineTransform tr) {
         super.setEuclideanTransform(tr);

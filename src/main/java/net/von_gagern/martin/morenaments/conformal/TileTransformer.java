@@ -56,7 +56,11 @@ public class TileTransformer implements Runnable {
 
     public void transform() throws MeshException {
         hypMesh = g.getTriangulation();
-        if (hypMesh != null) return;
+        if (hypMesh != null) {
+            dumpTriangles("hypMesh", hypMesh);
+            
+            return;
+        }
 
         // Approximate hyperbolic tile by a triangulated mesh
         logger.debug("Creating hyperbolic mesh");
@@ -191,19 +195,19 @@ public class TileTransformer implements Runnable {
         return t1;
     }
 
-    private <V> Mat3x3R triple(LocatedMesh<V> m, V c1, V c2, V c3) {
+    public static <V> Mat3x3R triple(LocatedMesh<V> m, V c1, V c2, V c3) {
         return new Mat3x3R(m.getX(c1), m.getX(c2), m.getX(c3),
                            m.getY(c1), m.getY(c2), m.getY(c3),
                                    1.,         1.,         1.);
     }
 
-    private Mat3x3R triple(Point2D p1, Point2D p2, Point2D p3) {
+    public static Mat3x3R triple(Point2D p1, Point2D p2, Point2D p3) {
         return new Mat3x3R(p1.getX(), p2.getX(), p3.getX(),
                            p1.getY(), p2.getY(), p3.getY(),
                                   1.,        1.,        1.);
     }
 
-    private Mat3x3R diag(double d1, double d2, double d3) {
+    public static Mat3x3R diag(double d1, double d2, double d3) {
         return new Mat3x3R(d1, 0., 0.,
                            0., d2, 0.,
                            0., 0., d3);
