@@ -16,7 +16,7 @@ public class HypLayout {
     /**
      * Log4j logger for customizable logging and reporting.
      */
-    private final Logger logger = Logger.getLogger(HypLayout.class);
+    private static final Logger logger = Logger.getLogger(HypLayout.class);
 
     private Triangle orbifoldCenter;
 
@@ -109,6 +109,8 @@ public class HypLayout {
     private Triangle layout(Triangle tInFlat, Edge eInFlat) {
         Triangle tInOrb = tInFlat.getOrbifoldElement();
         Edge eInOrb = eInFlat.getOrbifoldElement();
+        logger.trace("layout: tInFlat=" + tInFlat + ", eInFlat=" + eInFlat +
+                     ", tInOrb=" + tInOrb + ", eInOrb=" + eInOrb);
         Triangle tOutOrb = eInOrb.otherTriangle(tInOrb);
         if (tOutOrb == null) // triangle at reflecting boundary
             return null;
@@ -250,6 +252,12 @@ public class HypLayout {
         TwoMeshCircler(Triangle tFlat, Edge eFlat, Vertex vFlat,
                        Triangle tOrb, Edge eOrb, Vertex vOrb,
                        int count, Triangle targetOrb) {
+            logger.trace("Starting in tFlat=" + tFlat +
+                         ", eFlat=" + eFlat +
+                         ", vFlat=" + vFlat +
+                         ", tOrb=" + tOrb +
+                         ", eOrb=" + eOrb +
+                         ", vOrb=" + vOrb);
             while(tFlat != null) {
                 // make sure we are in sync
                 assert tFlat.getOrbifoldElement() == tOrb;
@@ -259,10 +267,14 @@ public class HypLayout {
                 // change edge
                 eFlat = tFlat.otherEdge(eFlat, vFlat);
                 eOrb = tOrb.otherEdge(eOrb, vOrb);
+                logger.trace("Changed edge to eFlat=" + eFlat +
+                             ", eOrb=" + eOrb);
 
                 // change triangle
                 tFlat = eFlat.otherTriangle(tFlat);
                 tOrb = eOrb.otherTriangle(tOrb);
+                logger.trace("Changed triangle to tFlat=" + tFlat +
+                             ", tOrb=" + tOrb);
 
                 // look whether we've reached our target triangle
                 if (tOrb != targetOrb) continue;

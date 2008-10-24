@@ -26,4 +26,8 @@ public class Vertex extends Point2D.Double {
         this.orbifoldElement = orbifoldElement;
     }
 
+    @Override public String toString() {
+        return "Vertex[" + x + ", " + y + "]";
+    }
+
 }

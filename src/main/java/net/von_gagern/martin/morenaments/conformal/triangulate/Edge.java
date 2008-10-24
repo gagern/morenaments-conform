@@ -148,4 +148,8 @@ public class Edge {
         this.hypPos = hypPos;
     }
 
+    @Override public String toString() {
+        return "Edge[" + p1 + ", " + p2 + "]";
+    }
+
 }
