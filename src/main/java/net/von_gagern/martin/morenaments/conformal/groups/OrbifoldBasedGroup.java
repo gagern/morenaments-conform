@@ -81,10 +81,11 @@ abstract class OrbifoldBasedGroup extends Group {
         // TileTransformer.dumpTriangles("eucOrbifold", eo); // not located!
         Vertex[] sp = eo.getSpecialPoints();
         ResultMesh<Vertex> ho; // hyperbolic orbifold
+        Map<Vertex, Double> angles; // target angles for corners & cone points
         try {
             logger.debug("Transforming to hyperbolic mesh");
             Conformal<Vertex> c = Conformal.getInstance(eo);
-            Map<Vertex, Double> angles = getHypAngles(sp, hyperbolicAngles);
+            angles = getHypAngles(sp, hyperbolicAngles);
             c.setAngleErrorBound(1e-12);
             c.fixedBoundaryCurvature(angles);
             c.setOutputGeometry(Geometry.HYPERBOLIC);
@@ -116,6 +117,7 @@ abstract class OrbifoldBasedGroup extends Group {
             e.setLength(ho.edgeLength(e.getP1(), e.getP2()));
         HypLayout hl = new HypLayout(eo.getCenter(),
                                      Arrays.asList(getInsidenessChecks()));
+        hl.setAngles(angles);
         Triangulation flat = hl.layout();
         Mat3x3R affine = new Mat3x3R(affineOrbifoldTransform());
         for (Triangle t: flat) {
@@ -127,6 +129,7 @@ abstract class OrbifoldBasedGroup extends Group {
                 Math.exp(ho.getU(v1.getOrbifoldElement())),
                 Math.exp(ho.getU(v2.getOrbifoldElement())),
                 Math.exp(ho.getU(v3.getOrbifoldElement())));
+            assert eucTriple != null;
             Mat3x3R m = affine.multiply(eucTriple).multiply(diag)
                               .multiply(hypTriple.getInverse());
             t.setProj(m);

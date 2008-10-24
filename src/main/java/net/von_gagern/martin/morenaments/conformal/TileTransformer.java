@@ -56,15 +56,15 @@ public class TileTransformer implements Runnable {
 
     public void transform() throws MeshException {
         hypMesh = g.getTriangulation();
+        hypCorners = g.getHypTileCorners();
         if (hypMesh != null) {
             dumpTriangles("hypMesh", hypMesh);
-            
+            lastUsedTriangle = centerTriangle = findCenter(hypMesh);
             return;
         }
 
         // Approximate hyperbolic tile by a triangulated mesh
         logger.debug("Creating hyperbolic mesh");
-        hypCorners = g.getHypTileCorners();
         hypMesh = new Triangulation();
         hypMesh.triangulatePoincare(hypCorners);
         dumpTriangles("hypMesh", hypMesh);

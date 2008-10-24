@@ -18,9 +18,11 @@ public class Triangle implements CorneredTriangle<Vertex> {
 
     public Triangle(Vertex a, Vertex b, Vertex c,
                     Edge bc, Edge ca, Edge ab) {
-        assert ccw(a, b, c) > 0 : "triangle must have positive orientation";
         vs = Arrays.asList(a, b, c);
         es = Arrays.asList(bc, ca, ab);
+        assert bc.hasEndpoints(b, c);
+        assert ca.hasEndpoints(c, a);
+        assert ab.hasEndpoints(a, b);
     }
 
     public List<Edge> edges() {
@@ -44,6 +46,7 @@ public class Triangle implements CorneredTriangle<Vertex> {
     }
 
     public Triangle neighbourContaining(Point2D p) {
+        assert isCcw() : "triangle must have positive orientation";
         Point2D c1 = vs.get(2), c2;
         Triangle res = this;
         double minCcw = 0;
@@ -67,14 +70,19 @@ public class Triangle implements CorneredTriangle<Vertex> {
     }
 
     public Edge otherEdge(Edge e, Vertex v) {
-        int vi = vs.indexOf(v);
-        if (vi < 0)
-            throw new IllegalArgumentException("not a vertex of this triangle");
+        int vi = indexOf(v);
         Edge e1 = es.get((vi + 1)%3), e2 = es.get((vi + 2)%3);
         if (e1 == e)
             return e2;
         assert e2 == e;
         return e1;
+    }
+
+    public int indexOf(Vertex v) {
+        int vi = vs.indexOf(v);
+        if (vi < 0)
+            throw new IllegalArgumentException("not a vertex of this triangle");
+        return vi;
     }
 
     public Triangle getOrbifoldElement() {
@@ -83,6 +91,10 @@ public class Triangle implements CorneredTriangle<Vertex> {
 
     public void setOrbifoldElement(Triangle orbifoldElement) {
         this.orbifoldElement = orbifoldElement;
+    }
+
+    private boolean isCcw() {
+        return ccw(vs.get(0), vs.get(1), vs.get(2)) > 0;
     }
 
     public static double ccw(Point2D p1, Point2D p2, Point2D p3) {

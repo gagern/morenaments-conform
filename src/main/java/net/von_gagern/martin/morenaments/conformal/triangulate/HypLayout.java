@@ -2,14 +2,17 @@ package net.von_gagern.martin.morenaments.conformal.triangulate;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
 import org.apache.log4j.Logger;
 
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;
+import net.von_gagern.martin.morenaments.conformal.Mat3x3R;
 
 public class HypLayout {
 
@@ -22,6 +25,8 @@ public class HypLayout {
 
     private List<HypTrafo> insidenessChecks;
 
+    private HashMap<Vertex, Integer> angleCounts;
+
     private List<Triangle> triangles;
 
     public HypLayout(Triangle orbifoldCenter,
@@ -29,6 +34,14 @@ public class HypLayout {
         this.orbifoldCenter = orbifoldCenter;
         this.insidenessChecks = insidenessChecks;
         triangles = new ArrayList<Triangle>();
+    }
+
+    public void setAngles(Map<Vertex, Double> angles) {
+        angleCounts = new HashMap<Vertex, Integer>(angles.size()*4/3 + 1);
+        for (Map.Entry<Vertex, Double> e: angles.entrySet()) {
+            double c = Math.PI*2/e.getValue();
+            angleCounts.put(e.getKey(), (int)(c + .5));
+        }
     }
 
     /**
@@ -75,17 +88,22 @@ public class HypLayout {
         double bcLen = bcOrb.getLength();
         double caLen = caOrb.getLength();
         double abLen = abOrb.getLength();
+        logger.trace("Lengths: ab=" + abLen +
+                     ", bc=" + bcLen + ", ca=" + caLen);
 
         HypEdgePos abPos, bcPos, caPos;
         abPos = new HypEdgePos();
-        abPos.setVertex(vs[0]);
+        abPos.setVertex(aOrb);
         es[2].setHypPos(abPos);
         double beta = hypAngle(abLen, bcLen, caLen);
         bcPos = abPos.derive(bOrb, abLen, -beta);
         es[0].setHypPos(bcPos);
         double alpha = hypAngle(caLen, abLen, bcLen);
-        caPos = abPos.derive(cOrb, abLen, alpha);
+        caPos = abPos.derive(aOrb, abLen, alpha);
         es[1].setHypPos(caPos);
+        logger.trace("alpha=" + alpha + ", beta=" + beta);
+        logger.trace("Edge positions: ab=" + abPos +
+                     ", bc=" + bcPos + ", ca=" + caPos);
 
         vs[0].setLocation(0, 0);
         vs[1].setLocation(abPos.derive(bOrb, abLen).dehomogenize());
@@ -93,8 +111,10 @@ public class HypLayout {
 
         Triangle tFlat = new Triangle(vs[0], vs[1], vs[2],
                                       es[0], es[1], es[2]);
+        logger.trace("Start triangle: " + tFlat);
         tFlat.registerWithEdges();
         tFlat.setOrbifoldElement(tOrb);
+        tFlat.setProj(tOrb.getProj());
         triangles.add(tFlat);
         return tFlat;
     }
@@ -107,13 +127,15 @@ public class HypLayout {
      * @return a newly created Triangle or <code>null</code> if none was created
      */
     private Triangle layout(Triangle tInFlat, Edge eInFlat) {
+        if (eInFlat.otherTriangle(tInFlat) != null)
+            return null; // already know our neighbour
         Triangle tInOrb = tInFlat.getOrbifoldElement();
         Edge eInOrb = eInFlat.getOrbifoldElement();
         logger.trace("layout: tInFlat=" + tInFlat + ", eInFlat=" + eInFlat +
                      ", tInOrb=" + tInOrb + ", eInOrb=" + eInOrb);
         Triangle tOutOrb = eInOrb.otherTriangle(tInOrb);
-        if (tOutOrb == null) // triangle at reflecting boundary
-            return null;
+        if (tOutOrb == null)
+            return null; // triangle at reflecting boundary
         Vertex aFlat = eInFlat.getP2(), bFlat = eInFlat.getP1();
         Vertex aOrb = eInOrb.getP2(), bOrb = eInOrb.getP1();
         if (aFlat.getOrbifoldElement() != aOrb) {
@@ -123,14 +145,13 @@ public class HypLayout {
         }
         assert aFlat.getOrbifoldElement() == aOrb;
         assert bFlat.getOrbifoldElement() == bOrb;
-        int c1 = 1, c2 = 1;
         TwoMeshCircler tmca, tmcb;
         tmca = new TwoMeshCircler(tInFlat, eInFlat, aFlat,
                                   tInOrb, eInOrb, aOrb,
-                                  c1, tOutOrb);
+                                  angleCounts.get(aOrb), tOutOrb);
         tmcb = new TwoMeshCircler(tInFlat, eInFlat, bFlat,
                                   tInOrb, eInOrb, bOrb,
-                                  c2, tOutOrb);
+                                  angleCounts.get(bOrb), tOutOrb);
         if (tmca.tFlat != null || tmcb.tFlat != null) {
             assert tmca.tFlat == tmcb.tFlat;
             return null; // triangle already layed out
@@ -162,6 +183,8 @@ public class HypLayout {
             bcFlat = new Edge(bFlat, cFlat);
             bcFlat.setOrbifoldElement(bcOrb);
             double beta = hypAngle(abLen, bcLen, caLen);
+            logger.trace("beta=" + beta);
+            assert beta > 0 && beta < Math.PI;
             bcPos = abPos.derive(bOrb, abLen, -beta);
             bcFlat.setHypPos(bcPos);
         }
@@ -172,7 +195,9 @@ public class HypLayout {
             caFlat = new Edge(cFlat, aFlat);
             caFlat.setOrbifoldElement(caOrb);
             double alpha = hypAngle(caLen, abLen, bcLen);
-            caPos = abPos.derive(cOrb, abLen, alpha);
+            logger.trace("alpha=" + alpha);
+            assert alpha > 0 && alpha < Math.PI;
+            caPos = abPos.derive(aOrb, abLen, alpha);
             caFlat.setHypPos(caPos);
         }
         else {
@@ -182,8 +207,12 @@ public class HypLayout {
         if (cNeedPos) {
             Point2D caC = caPos.derive(cOrb, caLen).dehomogenize();
             Point2D bcC = bcPos.derive(cOrb, bcLen).dehomogenize();
-            double x = (caC.getX() + bcC.getX())/2;
-            double y = (caC.getY() + bcC.getY())/2;
+            double caX = caC.getX(), caY = caC.getY();
+            double bcX = bcC.getX(), bcY = bcC.getY();
+            assert Math.abs(caX - bcX) < 1e-5 && Math.abs(caY - bcY) < 1e-5:
+            "x coordinates should match but differ by " + caC.distance(bcC);
+            double x = (caX + bcX)/2;
+            double y = (caY + bcY)/2;
             assert !Double.isNaN(x): "x must not be NaN";
             assert !Double.isNaN(y): "y must not be NaN";
             assert !Double.isInfinite(x): "x must be finite";
@@ -198,14 +227,25 @@ public class HypLayout {
         if (Triangle.ccw(aFlat, bFlat, cFlat) > 0) {
             tOutFlat = new Triangle(aFlat, bFlat, cFlat,
                                     bcFlat, caFlat, eInFlat);
+            Mat3x3R p = tOutOrb.getProj();
         }
         else {
             tOutFlat = new Triangle(cFlat, bFlat, aFlat,
                                     eInFlat, caFlat, bcFlat);
+            tOutFlat.setProj(tOutOrb.getProj());
         }
+        logger.trace("Created triangle " + tOutFlat);
         tOutFlat.registerWithEdges();
         tOutFlat.setOrbifoldElement(tOutOrb);
-        tOutFlat.setProj(tOutOrb.getProj());
+        Mat3x3R pOrb = tOutOrb.getProj(), pFlat = new Mat3x3R();
+        for (int colFlat = 0; colFlat < 3; ++colFlat) {
+            int colOrb = tOutOrb.indexOf(tOutFlat.vertices()
+                                         .get(colFlat).getOrbifoldElement());
+            for (int row = 0; row < 3; ++row) {
+                pFlat.set(row, colFlat, pOrb.get(row, colOrb));
+            }
+        }
+        tOutFlat.setProj(pFlat);
         triangles.add(tOutFlat);
         return tOutFlat;
     }
@@ -251,13 +291,16 @@ public class HypLayout {
 
         TwoMeshCircler(Triangle tFlat, Edge eFlat, Vertex vFlat,
                        Triangle tOrb, Edge eOrb, Vertex vOrb,
-                       int count, Triangle targetOrb) {
-            logger.trace("Starting in tFlat=" + tFlat +
+                       Integer angleCount, Triangle targetOrb) {
+            logger.trace("Circler starting in tFlat=" + tFlat +
                          ", eFlat=" + eFlat +
                          ", vFlat=" + vFlat +
                          ", tOrb=" + tOrb +
                          ", eOrb=" + eOrb +
                          ", vOrb=" + vOrb);
+            int count;
+            if (angleCount != null) count = angleCount;
+            else count = 1;
             while(tFlat != null) {
                 // make sure we are in sync
                 assert tFlat.getOrbifoldElement() == tOrb;
@@ -281,11 +324,13 @@ public class HypLayout {
                 if (--count != 0) continue;
 
                 // found what we've been looking for, so remember it
+                logger.trace("Circler found something");
                 this.tFlat = tFlat;
                 this.eFlat = eFlat;
                 this.eOrb = eOrb;
                 return;
             }
+            logger.trace("Circler found nothing");
         }
 
     }
