@@ -322,12 +322,15 @@ public class TileTransformer implements Runnable {
             new HypSimplexPredicate(Arrays.asList());
         */
         Rectangle b = rect.getBounds();
+        b.add(b.getMinX() - 1, b.getMinY() - 1);
         Vec2C v1 = new Vec2C(0, 0, 1, 0), v2 = new Vec2C();
         for (int y = b.y; y <= b.y + b.height; ++y) {
             for (int x = b.x; x <= b.x + b.width; ++x) {
                 if (!pixelCornerInside(tri, x, y))
                     continue;
-                p.setLocation(x, y);
+                // Logical integral coordinates are at pixel corners.
+                // Therefore pixel centers are between integral coordinates.
+                p.setLocation(x + .5, y + .5);
                 tri.transform(p, p);
                 v1.x.assign(p.getX(), p.getY());
                 HypTrafo ht = tiling.findTrafo(v1, 32);

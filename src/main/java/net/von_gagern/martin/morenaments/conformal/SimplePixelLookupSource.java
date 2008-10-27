@@ -24,8 +24,8 @@ public class SimplePixelLookupSource implements PixelLookupSource {
 
     public int getRGB(Point2D p) {
         tr.transform(p, tmpPt);
-        int x = (int)Math.round(tmpPt.getX());
-        int y = (int)Math.round(tmpPt.getY());
+        int x = (int)Math.floor(tmpPt.getX());
+        int y = (int)Math.floor(tmpPt.getY());
         int w = img.getWidth(), h = img.getHeight();
         while (x < 0) x += w;
         while (x >= w) x -= w;
@@ -35,9 +35,8 @@ public class SimplePixelLookupSource implements PixelLookupSource {
     }
 
     public static AffineTransform unitDiskTransform(double size) {
-        double scale = size/2;
-        double translate = (size-1)/2;
-        return new AffineTransform(scale, 0, 0, scale, translate, translate);
+        double r = size/2.;
+        return new AffineTransform(r, 0, 0, r, r, r);
     }
 
 }
