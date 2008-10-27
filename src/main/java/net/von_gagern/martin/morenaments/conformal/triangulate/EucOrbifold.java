@@ -56,7 +56,7 @@ public abstract class EucOrbifold implements MetricMesh<Vertex> {
         double ax = tr.getScaleX(), ay = tr.getShearY();
         double bx = tr.getShearX(), by = tr.getScaleY();
         double cx = ax + bx, cy = ay + by;
-        double dx = ax - by, dy = ay - by;
+        double dx = ax - bx, dy = ay - by;
         double al = Math.hypot(ax, ay)*scale, bl = Math.hypot(bx, by)*scale;
         double cl = Math.hypot(cx, cy)*scale, dl = Math.hypot(dx, dy)*scale;
         if (cl < dl)
@@ -68,19 +68,17 @@ public abstract class EucOrbifold implements MetricMesh<Vertex> {
 
     public void mesh(double la, double lb, double lc, boolean dc) {
         int ic = dc ? 1 : 0;
-        Double len;
-        len = Double.valueOf(la);
+        logger.debug("Meshing with la=" + la + ", lb=" + lb +
+                     ", lc=" + lc + ", ic=" + ic);
         for (int x = 1; x < vs.length; ++x)
             for (int y = 0; y < vs[x].length; ++y)
-                registerLength(vs[x-1][y], vs[x][y], len);
-        len = Double.valueOf(lb);
+                registerLength(vs[x-1][y], vs[x][y], la);
         for (int x = 0; x < vs.length; ++x)
             for (int y = 1; y < vs[x].length; ++y)
-                registerLength(vs[x][y-1], vs[x][y], len);
-        len = Double.valueOf(lc);
+                registerLength(vs[x][y-1], vs[x][y], lb);
         for (int x = 1; x < vs.length; ++x) {
             for (int y = 1; y < vs[x].length; ++y) {
-                registerLength(vs[x-ic][y], vs[x-1+ic][y-1], len);
+                registerLength(vs[x-ic][y], vs[x-1+ic][y-1], lc);
                 addTriangle(x-1, y-1, x  , y-1, x-ic  , y  );
                 addTriangle(x  , y  , x-1, y  , x-1+ic, y-1);
                 if (centerCoordinates != null &&
@@ -108,10 +106,12 @@ public abstract class EucOrbifold implements MetricMesh<Vertex> {
         ts.add(t);
     }
 
-    private void registerLength(Vertex v1, Vertex v2, Double len) {
+    private void registerLength(Vertex v1, Vertex v2, double len) {
+        VertexPair vp = new VertexPair(v1, v2);
+        if (es.containsKey(vp)) return;
         Edge e = new Edge(v1, v2);
         e.setLength(len);
-        es.put(new VertexPair(v1, v2), e);
+        es.put(vp, e);
     }
 
     protected void setCenterCoordinates(int x, int y) {
