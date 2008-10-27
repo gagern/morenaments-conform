@@ -8,18 +8,18 @@ class ArcEdge extends Edge {
 
     private double r;
 
-    public ArcEdge(Point2D p1, Point2D p2, Point2D center, double radius) {
+    public ArcEdge(Vertex p1, Vertex p2, Point2D center, double radius) {
         super(p1, p2);
         c = center;
         r = radius;
     }
 
-    @Override protected Point2D createCenter() {
-        Point2D p1 = getP1(), p2 = getP2();
+    @Override protected Vertex createCenter() {
+        Vertex p1 = getP1(), p2 = getP2();
         double x = (p1.getX() + p2.getX())/2. - c.getX();
         double y = (p1.getY() + p2.getY())/2. - c.getY();
         double f = r/Math.hypot(x, y);
-        return new Point2D.Double(c.getX() + f*x, c.getY() + f*y);
+        return new Vertex(c.getX() + f*x, c.getY() + f*y);
     }
 
     @Override protected ArcEdge createFirstPart() {

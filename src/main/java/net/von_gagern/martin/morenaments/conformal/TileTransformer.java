@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -32,6 +33,7 @@ import de.tum.in.gagern.hornamente.Vec3R;
 import net.von_gagern.martin.morenaments.conformal.groups.Group;
 import net.von_gagern.martin.morenaments.conformal.triangulate.Triangle;
 import net.von_gagern.martin.morenaments.conformal.triangulate.Triangulation;
+import net.von_gagern.martin.morenaments.conformal.triangulate.Vertex;
 
 public class TileTransformer implements Runnable {
 
@@ -53,9 +55,18 @@ public class TileTransformer implements Runnable {
     }
 
     public void transform() throws MeshException {
+        hypMesh = g.getTriangulation();
+        hypCorners = g.getHypTileCorners();
+        if (hypMesh != null) {
+            dumpTriangles("hypMesh", hypMesh);
+            lastUsedTriangle = centerTriangle = findCenter(hypMesh);
+            if (logger.isTraceEnabled())
+                dumpTriangles("hypMeshes", hypMesh, g.getGenerators());
+            return;
+        }
+
         // Approximate hyperbolic tile by a triangulated mesh
         logger.debug("Creating hyperbolic mesh");
-        hypCorners = g.getHypTileCorners();
         hypMesh = new Triangulation();
         hypMesh.triangulatePoincare(hypCorners);
         dumpTriangles("hypMesh", hypMesh);
@@ -93,8 +104,8 @@ public class TileTransformer implements Runnable {
         Mat3x3R affine = dstCorners.multiply(srcCorners.getInverse());
         //affine = diag(1, 1, 1);
         for (Triangle t: hypMesh) {
-            List<Point2D> vs = t.vertices();
-            Point2D v1 = vs.get(0), v2 = vs.get(1), v3 = vs.get(2);
+            List<Vertex> vs = t.vertices();
+            Vertex v1 = vs.get(0), v2 = vs.get(1), v3 = vs.get(2);
             Mat3x3R hypTriple = triple(hypMesh, v1, v2, v3);
             Mat3x3R eucTriple = triple(eucMesh, v1, v2, v3);
             Mat3x3R diag = diag(Math.exp(-eucMesh.getU(v1)),
@@ -168,7 +179,7 @@ public class TileTransformer implements Runnable {
         return new Mesh2D(l);
     }
 
-    private Triangle findCenter(List<Triangle> triangles) {
+    private Triangle findCenter(Collection<Triangle> triangles) {
         double x = 0, y = 0;
         for (Point2D p: hypCorners) {
             x += p.getX();
@@ -177,27 +188,28 @@ public class TileTransformer implements Runnable {
         x /= hypCorners.size();
         y /= hypCorners.size();
         Point2D c = new Point2D.Double(x, y);
-        Triangle t1 = triangles.get(0), t2;
-        while (true) {
+        Triangle t1 = triangles.iterator().next(), t2;
+        for (int i = 0; i < 100; ++i) {
             t2 = t1.neighbourContaining(c);
             if (t1 == t2) return t1;
             t1 = t2;
         }
+        return t1;
     }
 
-    private <V> Mat3x3R triple(LocatedMesh<V> m, V c1, V c2, V c3) {
+    public static <V> Mat3x3R triple(LocatedMesh<V> m, V c1, V c2, V c3) {
         return new Mat3x3R(m.getX(c1), m.getX(c2), m.getX(c3),
                            m.getY(c1), m.getY(c2), m.getY(c3),
                                    1.,         1.,         1.);
     }
 
-    private Mat3x3R triple(Point2D p1, Point2D p2, Point2D p3) {
+    public static Mat3x3R triple(Point2D p1, Point2D p2, Point2D p3) {
         return new Mat3x3R(p1.getX(), p2.getX(), p3.getX(),
                            p1.getY(), p2.getY(), p3.getY(),
                                   1.,        1.,        1.);
     }
 
-    private Mat3x3R diag(double d1, double d2, double d3) {
+    public static Mat3x3R diag(double d1, double d2, double d3) {
         return new Mat3x3R(d1, 0., 0.,
                            0., d2, 0.,
                            0., 0., d3);
@@ -310,12 +322,15 @@ public class TileTransformer implements Runnable {
             new HypSimplexPredicate(Arrays.asList());
         */
         Rectangle b = rect.getBounds();
+        b.add(b.getMinX() - 1, b.getMinY() - 1);
         Vec2C v1 = new Vec2C(0, 0, 1, 0), v2 = new Vec2C();
         for (int y = b.y; y <= b.y + b.height; ++y) {
             for (int x = b.x; x <= b.x + b.width; ++x) {
                 if (!pixelCornerInside(tri, x, y))
                     continue;
-                p.setLocation(x, y);
+                // Logical integral coordinates are at pixel corners.
+                // Therefore pixel centers are between integral coordinates.
+                p.setLocation(x + .5, y + .5);
                 tri.transform(p, p);
                 v1.x.assign(p.getX(), p.getY());
                 HypTrafo ht = tiling.findTrafo(v1, 32);
@@ -334,9 +349,9 @@ public class TileTransformer implements Runnable {
     }
 
     private boolean pixelCornerInside(AffineTransform tr, double x, double y) {
-        return pointInside(tr, x, y) ||
-               pointInside(tr, x+.5, y+.5) || pointInside(tr, x-.5, y-.5) ||
-               pointInside(tr, x+.5, y-.5) || pointInside(tr, x-.5, y+.5);
+        return pointInside(tr, x+.5, y+.5) ||
+               pointInside(tr, x+1, y+1) || pointInside(tr, x, y) ||
+               pointInside(tr, x+1, y) || pointInside(tr, x, y+1);
     }
 
     private boolean pointInside(AffineTransform tr, double x, double y) {
@@ -351,7 +366,7 @@ public class TileTransformer implements Runnable {
         return true;
     }
 
-    private void dumpTriangles(String name, LocatedMesh<?> mesh) {
+    public static void dumpTriangles(String name, LocatedMesh<?> mesh) {
         double inset = 0.01;
         double width = 600, height = 600;
         File debugDir = new File("debug");
@@ -362,7 +377,11 @@ public class TileTransformer implements Runnable {
             logger.debug("Creating mesh");
             Mesh2D m2d = new Mesh2D(mesh);
             logger.debug("Mesh created, getting boundary");
-            Rectangle2D rect = m2d.getBoundary().getBounds2D();
+            // Rectangle2D rect = m2d.getBoundary().getBounds2D();
+            Rectangle2D rect = new Rectangle2D.Double();
+            for (Triangle2D t: m2d)
+                for (int i = 0; i < 3; ++i)
+                    rect.add(t.getCorner(i));
             logger.debug("Got boundary rect");
             if (inset > 0) {
                 rect.add(rect.getMinX() - inset, rect.getMinY() - inset);
@@ -394,6 +413,111 @@ public class TileTransformer implements Runnable {
                 e2.printStackTrace();
             }
         }
+    }
+
+    public static void dumpTriangles(String name, LocatedMesh<Vertex> mesh,
+                                     HypTrafo[] trafos) {
+        double inset = 0.01;
+        double width = 600, height = 600;
+        File debugDir = new File("debug");
+        if (!debugDir.isDirectory()) return;
+        try {
+            File outFile = new File(debugDir, name + ".svg");
+            Rectangle2D rect = new Rectangle2D.Double();
+            logger.debug("Writing triangles to " + outFile.getPath());
+            Iterator<? extends CorneredTriangle<? extends Vertex>> ti;
+            ti = mesh.iterator();
+            Point2D p2d = new Point2D.Double();
+            while (ti.hasNext()) {
+                CorneredTriangle<? extends Vertex> t = ti.next();
+                for (int i = 0; i < 3; ++i) {
+                    Vertex v = t.getCorner(i);
+                    p2d.setLocation(mesh.getX(v), mesh.getY(v));
+                    rect.add(p2d);
+                }
+            }
+            logger.debug("Got boundary rect");
+            if (inset > 0) {
+                rect.add(rect.getMinX() - inset, rect.getMinY() - inset);
+                rect.add(rect.getMaxX() + inset, rect.getMaxY() + inset);
+            }
+            double factor = Math.min(width/rect.getWidth(),
+                                     height/rect.getHeight());
+            width = factor*rect.getWidth();
+            height = factor*rect.getHeight();
+            logger.debug("Writing meshes");
+            FileOutputStream outStream = new FileOutputStream(outFile);
+            SvgWriter svg = new SvgWriter(outStream);
+            svg.head(rect, width, height);
+            svg.writeTriangles(mesh);
+            for (HypTrafo t: trafos) {
+                svg.newLayer();
+                svg.writeTriangles(new TransformedMesh(mesh, t));
+            }
+            svg.tail();
+            logger.debug("Mesh written");
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            try {
+                ObjFormat obj = new ObjFormat(mesh, null);
+                File outFile = new File(debugDir, "exception.obj");
+                FileOutputStream outStream = new FileOutputStream(outFile);;
+                obj.write(outStream);
+                outStream.close();
+            }
+            catch (Exception e2) {
+                e2.printStackTrace();
+            }
+        }
+    }
+
+    private static class TransformedMesh implements LocatedMesh<Vertex> {
+
+        LocatedMesh<Vertex> parent;
+
+        HypTrafo trafo;
+
+        Vertex vertex;
+
+        Vec2C vec = new Vec2C();
+
+        TransformedMesh(LocatedMesh<Vertex> parent, HypTrafo trafo) {
+            this.parent = parent;
+            this.trafo = trafo;
+        }
+
+        public Iterator<? extends CorneredTriangle<? extends Vertex>>
+        iterator() {
+            return parent.iterator();
+        }
+
+        private void setVertex(Vertex v) {
+            if (this.vertex == v) return;
+            vertex = v;
+            vec.assign(parent.getX(v), parent.getY(v), 1, 0);
+            trafo.transform(vec, vec);
+            vec.dehomogenize();
+        }
+
+        public double getX(Vertex v) {
+            setVertex(v);
+            return vec.x.r;
+        }
+
+        public double getY(Vertex v) {
+            setVertex(v);
+            return vec.x.i;
+        }
+
+        public double getZ(Vertex v) {
+            return 0;
+        }
+
+        public double edgeLength(Vertex v1, Vertex v2) {
+            return parent.edgeLength(v1, v2);
+        }
+
     }
 
 }

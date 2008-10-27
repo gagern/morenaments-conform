@@ -1,7 +1,7 @@
 package net.von_gagern.martin.morenaments.conformal.triangulate;
 
 import java.awt.geom.Point2D;
-import java.util.AbstractList;
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -13,15 +13,22 @@ import de.tum.in.gagern.hornamente.PoincareLine;
 import net.von_gagern.martin.confoo.mesh.LocatedMesh;
 
 public class Triangulation
-    extends AbstractList<Triangle>
-    implements LocatedMesh<Point2D>
+    extends AbstractCollection<Triangle>
+    implements LocatedMesh<Vertex>
 {
 
     private double maxLengthSq = 1e-3;
 
-    private List<Triangle> triangles;
+    private Collection<Triangle> triangles;
 
     private PriorityQueue<Edge> q;
+
+    public Triangulation() {
+    }
+
+    public Triangulation(Collection<Triangle> triangles) {
+        this.triangles = triangles;
+    }
 
     public double getMaxLength() {
         return Math.sqrt(maxLengthSq);
@@ -31,7 +38,7 @@ public class Triangulation
         maxLengthSq = maxLength*maxLength;
     }
 
-    private Edge poincareEdge(Point2D p1, Point2D p2) {
+    private Edge poincareEdge(Vertex p1, Vertex p2) {
         PoincareLine l;
         l = new PoincareLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
         Point2D c = l.circleCenter();
@@ -43,28 +50,55 @@ public class Triangulation
     }
 
     public void triangulatePoincare(List<Point2D> corners) {
+        List<Vertex> vertices = new ArrayList<Vertex>(corners.size());
+        for (Point2D corner: corners) vertices.add(new Vertex(corner));
         triangles = new ArrayList<Triangle>(corners.size() - 2);
-        Point2D a = corners.get(0), b = corners.get(1), c;
-        Edge bc, ac, ab = poincareEdge(a, b);
-        for (int i = 2; i < corners.size(); ++i) {
-            c = corners.get(i);
-            bc = poincareEdge(b, c);
-            ac = poincareEdge(a, c);
-            Triangle t = new Triangle(a, b, c, bc, ac, ab);
-            ab.setLeft(t);
-            bc.setLeft(t);
-            ac.setRight(t);
-            triangles.add(t);
-            b = c;
-            ab = ac;
-        }
+        delaunay(vertices);
         assert triangles.size() == corners.size() - 2;
         triangulateImpl();
     }
 
-    public void triangulate(Collection<Triangle> triangles) {
-        this.triangles = new ArrayList<Triangle>(triangles);
-        triangulateImpl();
+    private Edge delaunay(List<Vertex> corners) {
+        Vertex a = corners.get(corners.size() - 1), b = corners.get(0);
+        Edge ab = poincareEdge(a, b);
+        if (corners.size() > 2) {
+            double ax = a.getX(), ay = a.getY();
+            double bx = b.getX() - ax, by = b.getY() - ay, bz = bx*bx + by*by;
+            // Find c, the corner with least violation (= maximum determinant)
+            // of circumcircle predicate
+            double maxDet = Double.NEGATIVE_INFINITY;
+            int ci = -1;
+            for (int i = 1; i < corners.size() - 1; ++i) {
+                Vertex c = corners.get(i);
+                double cx = c.getX() - ax, cy = c.getY() - ay;
+                double cz = cx*cx + cy*cy;
+                // Find d, causing maximum violation (= minimum determinant)
+                // for triangle abc
+                double minDet = Double.POSITIVE_INFINITY;
+                for (int j = 2; j < corners.size(); ++j) {
+                    if (j == i) continue;
+                    Vertex d = corners.get(j);
+                    double dx = d.getX() - ax, dy = d.getY() - ay;
+                    double dz = dx*dx + dy*dy;
+                    double det = bx*cy*dz + by*cz*dx + bz*cx*dy
+                               - bx*cz*dy - by*cx*dz - bz*cy*dx;
+                    if (minDet > det)
+                        minDet = det;
+                }
+                if (maxDet > minDet) continue;
+                maxDet = minDet;
+                ci = i;
+            }
+            Vertex c = corners.get(ci);
+            Edge bc = delaunay(corners.subList(0, ci + 1));
+            Edge ca = delaunay(corners.subList(ci, corners.size()));
+            Triangle t = new Triangle(a, b, c, bc, ca, ab);
+            ab.setLeft(t);
+            bc.setRight(t);
+            ca.setRight(t);
+            triangles.add(t);
+        }
+        return ab;
     }
 
     private void triangulateImpl() {
@@ -87,7 +121,7 @@ public class Triangulation
     private void subdivide(Edge e) {
         Triangle tl = e.getLeft();
         Triangle tr = e.getRight();
-        Point2D m = e.getCenter();
+        Vertex m = e.getCenter();
         Edge e1 = e.getFirstPart();
         Edge e2 = e.getSecondPart();
         enqueue(e1);
@@ -96,14 +130,14 @@ public class Triangulation
         subdivide(tr, e, m, e2, e1);
     }
 
-    private void subdivide(Triangle t, Edge ab, Point2D m, Edge am, Edge mb) {
+    private void subdivide(Triangle t, Edge ab, Vertex m, Edge am, Edge mb) {
         if (t == null) return;
 
         // get all the vertices and edges we need
         int i = t.edges().indexOf(ab);
-        Point2D a = t.vertices().get((i + 1)%3);
-        Point2D b = t.vertices().get((i + 2)%3);
-        Point2D c = t.vertices().get(i);
+        Vertex a = t.vertices().get((i + 1)%3);
+        Vertex b = t.vertices().get((i + 2)%3);
+        Vertex c = t.vertices().get(i);
         Edge bc = t.edges().get((i + 1)%3);
         Edge ca = t.edges().get((i + 2)%3);
         Edge mc = new Edge(m, c);
@@ -126,10 +160,6 @@ public class Triangulation
         enqueue(mc);
     }
 
-    public Triangle get(int index) {
-        return triangles.get(index);
-    }
-    
     public int size() {
         return triangles.size();
     }
@@ -138,19 +168,19 @@ public class Triangulation
         return triangles.iterator();
     }
 
-    public double getX(Point2D v) {
+    public double getX(Vertex v) {
         return v.getX();
     }
 
-    public double getY(Point2D v) {
+    public double getY(Vertex v) {
         return v.getY();
     }
 
-    public double getZ(Point2D v) {
+    public double getZ(Vertex v) {
         return 0;
     }
 
-    public double edgeLength(Point2D v1, Point2D v2) {
+    public double edgeLength(Vertex v1, Vertex v2) {
         return v1.distance(v2);
     }
 

@@ -2,11 +2,19 @@ package net.von_gagern.martin.morenaments.conformal.groups;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+
+import org.apache.log4j.Logger;
+
 import de.tum.in.gagern.hornamente.HypTrafo;
+import net.von_gagern.martin.morenaments.conformal.triangulate.Triangulation;
 
 public abstract class Group implements Cloneable {
+
+    private static final Logger logger = Logger.getLogger(Group.class);
 
     protected final int[] euclideanAngles;
 
@@ -89,6 +97,83 @@ public abstract class Group implements Cloneable {
         }
     }
 
+    public Triangulation getTriangulation() {
+        return null;
+    }
+
+    public String toImageComment() {
+        StringBuilder buf = new StringBuilder();
+        buf.append("class=").append(getClass().getName()).append(";");
+        AffineTransform eucTrans = getEuclideanTransform();
+        if (eucTrans != null) {
+            buf.append("eucTrans=[");
+            String delim = "";
+            double[] matrix = new double[6];
+            eucTrans.getMatrix(matrix);
+            for (int i = 0; i < 6; ++i) {
+                buf.append(delim).append(matrix[i]);
+                delim=",";
+            }
+            buf.append("];");
+        }
+        if (hyperbolicAngles != null) {
+            buf.append("hypAngles=[");
+            String delim = "";
+            for (int i = 0; i < hyperbolicAngles.length; ++i) {
+                buf.append(delim).append(hyperbolicAngles[i]);
+                delim=",";
+            }
+            buf.append("];");
+        }
+        return buf.toString();
+    }
+
+    public static Group fromImageComment(String comment) throws IOException {
+        if (comment == null) return null;
+        if (!comment.startsWith("class=")) return null;
+        int semiColon = comment.indexOf(";");
+        if (semiColon == -1) semiColon = comment.length();
+        String className = comment.substring("class=".length(), semiColon);
+        try {
+            Class<? extends Group> clazz;
+            clazz = Class.forName(className).asSubclass(Group.class);
+            Group g = clazz.newInstance();
+            g.initFromImageComment(comment.substring(semiColon + 1));
+            logger.info("Group information restored from image comment.");
+            return g;
+        }
+        catch (Exception e) {
+            throw new IOException("Illegal image comment: " + comment, e);
+        }
+    }
+
+    public void initFromImageComment(String comment) {
+        for (String pair: comment.split(";")) {
+            String[] parts = pair.split("=", 2);
+            if (parts.length != 2) continue;
+            String key = parts[0], value = parts[1];
+            if ("eucTrans".equals(key)) {
+                String list = value.substring(1, value.length()-1);
+                String[] elements = list.split(",");
+                double[] numbers = new double[elements.length];
+                for (int i = 0; i < elements.length; ++i)
+                    numbers[i] = Double.parseDouble(elements[i]);
+                setEuclideanTransform(new AffineTransform(numbers));
+            }
+            else if ("hypAngles".equals(key)) {
+                String list = value.substring(1, value.length()-1);
+                String[] elements = list.split(",");
+                int[] numbers = new int[elements.length];
+                for (int i = 0; i < elements.length; ++i)
+                    numbers[i] = Integer.parseInt(elements[i]);
+                setHyperbolicAngles(numbers);
+            }
+            else {
+                logger.warn("Unknown key: " + key);
+            }
+        }
+    }
+
     public static P6m p6m() {
         return new P6m();
     }
@@ -119,6 +204,14 @@ public abstract class Group implements Cloneable {
 
     public static P4 p4() {
         return new P4();
+    }
+
+    public static Pmm pmm() {
+        return new Pmm();
+    }
+
+    public static P2 p2() {
+        return new P2();
     }
 
     public enum EuclideanGroup {

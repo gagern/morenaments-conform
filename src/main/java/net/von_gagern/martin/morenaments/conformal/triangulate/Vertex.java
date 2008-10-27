@@ -2,38 +2,32 @@ package net.von_gagern.martin.morenaments.conformal.triangulate;
 
 import java.awt.geom.Point2D;
 
-class Vertex extends Point2D.Double implements Comparable<Vertex> {
+public class Vertex extends Point2D.Double {
 
-    private int index;
+    public Vertex orbifoldElement;
 
-    private int type;
+    public Vertex(double x, double y) {
+        super(x, y);
+    }
 
     public Vertex(Point2D p) {
         super(p.getX(), p.getY());
-        this.index = 0;
-        this.type = 0;
     }
 
-    void setIndex(int index) {
-        this.index = index;
+    public Vertex() {
+        super();
     }
 
-    int getIndex() {
-        return index;
+    public Vertex getOrbifoldElement() {
+        return orbifoldElement;
     }
 
-    void setType(int type) {
-        this.type = type;
+    public void setOrbifoldElement(Vertex orbifoldElement) {
+        this.orbifoldElement = orbifoldElement;
     }
 
-    int getType() {
-        return type;
-    }
-
-    public int compareTo(Vertex that) {
-        if (this.type != that.type)
-            return that.type - this.type;
-        return this.index - that.index;
+    @Override public String toString() {
+        return "Vertex[" + x + ", " + y + "]";
     }
 
 }

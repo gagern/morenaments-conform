@@ -2,36 +2,42 @@ package net.von_gagern.martin.morenaments.conformal.triangulate;
 
 import java.awt.geom.Point2D;
 
-class Edge {
+public class Edge {
 
-    private Point2D p1;
+    private Vertex p1;
 
-    private Point2D p2;
+    private Vertex p2;
 
     private Triangle left;
 
     private Triangle right;
 
-    private Point2D center;
+    private Vertex center;
 
     private Edge firstPart;
 
     private Edge secondPart;
 
-    public Edge(Point2D p1, Point2D p2) {
+    private Edge orbifoldElement;
+
+    private double length = Double.NaN;
+
+    private HypEdgePos hypPos;
+
+    public Edge(Vertex p1, Vertex p2) {
         this.p1 = p1;
         this.p2 = p2;
     }
 
-    public Point2D getP1() {
+    public Vertex getP1() {
         return p1;
     }
 
-    public Point2D getP2() {
+    public Vertex getP2() {
         return p2;
     }
 
-    public Point2D getCenter() {
+    public Vertex getCenter() {
         if (center == null)
             center = createCenter();
         return center;
@@ -49,7 +55,7 @@ class Edge {
         return secondPart;
     }
 
-    public Edge getPart(Point2D endpoint) {
+    public Edge getPart(Vertex endpoint) {
         if (endpoint == p1) {
             return getFirstPart();
         }
@@ -59,9 +65,9 @@ class Edge {
         }
     }
 
-    protected Point2D createCenter() {
-        return new Point2D.Double((p1.getX() + p2.getX())/2.,
-                                  (p1.getY() + p2.getY())/2.);
+    protected Vertex createCenter() {
+        return new Vertex((p1.getX() + p2.getX())/2.,
+                          (p1.getY() + p2.getY())/2.);
     }
 
     protected Edge createFirstPart() {
@@ -88,14 +94,16 @@ class Edge {
         right = t;
     }
 
-    public void setTriangle(Point2D p1, Point2D p2, Triangle t) {
+    public void setTriangle(Vertex p1, Vertex p2, Triangle t) {
         if (this.p1 == p1) {
             assert this.p2 == p2;
+            assert left == null: "Shouldn't overwrite existing neighbour";
             left = t;
         }
         else {
             assert this.p1 == p2;
             assert this.p2 == p1;
+            assert right == null: "Shouldn't overwrite existing neighbour";
             right = t;
         }
     }
@@ -109,6 +117,46 @@ class Edge {
             return right;
         assert right == t;
         return left;
+    }
+
+    public Vertex otherVertex(Vertex v) {
+        if (p1 == v)
+            return p2;
+        assert p2 == v;
+        return p1;
+    }
+
+    public Edge getOrbifoldElement() {
+        return orbifoldElement;
+    }
+
+    public void setOrbifoldElement(Edge orbifoldElement) {
+        this.orbifoldElement = orbifoldElement;
+    }
+
+    public double getLength() {
+        return length;
+    }
+
+    public void setLength(double length) {
+        this.length = length;
+    }
+
+    public HypEdgePos getHypPos() {
+        return hypPos;
+    }
+
+    public void setHypPos(HypEdgePos hypPos) {
+        this.hypPos = hypPos;
+    }
+
+    public boolean hasEndpoints(Vertex v1, Vertex v2) {
+        return (this.p1 == v1 && this.p2 == v2)
+            || (this.p1 == v2 && this.p2 == v1);
+    }
+
+    @Override public String toString() {
+        return "Edge[" + p1 + ", " + p2 + "]";
     }
 
 }

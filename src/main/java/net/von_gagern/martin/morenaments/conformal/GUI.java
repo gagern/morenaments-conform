@@ -9,8 +9,19 @@ import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.ImageWriter;
+import javax.imageio.metadata.IIOInvalidTreeException;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.stream.FileImageInputStream;
+import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.stream.ImageInputStream;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JDesktopPane;
@@ -23,12 +34,22 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
+import javax.xml.xpath.XPathFactory;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.bootstrap.DOMImplementationRegistry;
+
+import org.apache.log4j.Logger;
 
 import de.tum.in.gagern.hornamente.BusyFeedback;
 import de.tum.in.gagern.ornament.Ornament;
 import net.von_gagern.martin.morenaments.conformal.groups.Group;
 
 public class GUI extends JDesktopPane {
+
+    private final Logger logger = Logger.getLogger(GUI.class);
 
     private CommandLine cl;
 
@@ -185,8 +206,25 @@ public class GUI extends JDesktopPane {
         currentDir = fc.getCurrentDirectory();
         File file = fc.getSelectedFile();
         try {
-            BufferedImage img = ImageIO.read(file);
-            addImage(file.getName(), img, null);
+            ImageInputStream stream = new FileImageInputStream(file);
+            Iterator<ImageReader> iri = ImageIO.getImageReaders(stream);
+            if (!iri.hasNext())
+                throw new IOException("Unsupported format: " + file.getName());
+            ImageReader reader = iri.next();
+            reader.setInput(stream);
+            String comment;
+            BufferedImage img;
+            try {
+                comment = getComment(reader.getImageMetadata(0));
+                logger.info("Comment = " + comment);
+                img = reader.read(0);
+            }
+            catch (IndexOutOfBoundsException e) {
+                throw new IOException("File contains no images", e);
+            }
+            // BufferedImage img = ImageIO.read(file);
+            Group group = Group.fromImageComment(comment);
+            addImage(file.getName(), img, group);
         }
         catch (IOException e) {
             error(e);
@@ -211,7 +249,18 @@ public class GUI extends JDesktopPane {
         }
         BufferedImage img = currentImageDisplay.getImage();
         try {
-            ImageIO.write(img, ext, file);
+            Iterator<ImageWriter> iwi = ImageIO.getImageWritersBySuffix(ext);
+            if (!iwi.hasNext())
+                throw new IOException("Unsupported format: " + ext);
+            ImageWriter writer = iwi.next();
+            IIOMetadata meta = writer.getDefaultImageMetadata
+                                   (new ImageTypeSpecifier(img), null);
+            Group g = currentImageDisplay.getGroup();
+            if (g != null) setComment(meta, g.toImageComment());
+            writer.setOutput(new FileImageOutputStream(file));
+            writer.write(new IIOImage(img, null, meta));
+            writer.dispose();
+            // ImageIO.write(img, ext, file);
             currentImageDisplay.setTitle(fileName);
         }
         catch (IOException e) {
@@ -219,6 +268,46 @@ public class GUI extends JDesktopPane {
         }
     }
 
+    private final String STD_METADATA_FORMAT = "javax_imageio_1.0";
+
+    private void setComment(IIOMetadata meta, String comment) {
+        try {
+            DOMImplementationRegistry registry;
+            registry = DOMImplementationRegistry.newInstance();
+            DOMImplementation impl = registry.getDOMImplementation("XML 3.0");
+            Document doc = impl.createDocument(null, STD_METADATA_FORMAT, null);
+            Element root, text, entry;
+            root = doc.getDocumentElement();
+            root.appendChild(text = doc.createElement("Text"));
+            text.appendChild(entry = doc.createElement("TextEntry"));
+            entry.setAttribute("keyword", "Comment");
+            entry.setAttribute("value", comment);
+            // The following three are necessary to avoid a Java VM bug:
+            // http://bugs.sun.com/view_bug.do?bug_id=5106550
+            entry.setAttribute("encoding", "US-ASCII");
+            entry.setAttribute("compression", "none");
+            entry.setAttribute("language", "");
+            meta.mergeTree(STD_METADATA_FORMAT, root);
+        }
+        catch (Exception e) {
+            logger.error(e);
+        }
+    }
+
+    private String getComment(IIOMetadata meta) {
+        final String XPATH;
+        XPATH = "Text/TextEntry[@keyword='Comment']/@value";
+        try {
+            if (meta == null) return null;
+            Node node = meta.getAsTree(STD_METADATA_FORMAT);
+            if (node == null) return null;
+            return XPathFactory.newInstance().newXPath().evaluate(XPATH, node);
+        }
+        catch (Exception e) {
+            logger.error(e);
+            return null;
+        }
+    }
 
     private void hypTile() {
         Group g = currentImageDisplay.getGroup();

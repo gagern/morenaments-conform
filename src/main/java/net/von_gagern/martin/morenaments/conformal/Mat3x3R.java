@@ -1,5 +1,6 @@
 package net.von_gagern.martin.morenaments.conformal;
 
+import java.awt.geom.AffineTransform;
 import de.tum.in.gagern.hornamente.Vec3R;
 
 public class Mat3x3R implements Cloneable {
@@ -14,6 +15,12 @@ public class Mat3x3R implements Cloneable {
         if (components.length != 9)
             throw new IllegalArgumentException("Need exactly 9 components");
         m = components;
+    }
+
+    public Mat3x3R(AffineTransform t) {
+        this(t.getScaleX(), t.getShearX(), t.getTranslateX(),
+             t.getShearY(), t.getScaleY(), t.getTranslateY(),
+                        0.,            0.,                1.);
     }
 
     public Mat3x3R clone() {
