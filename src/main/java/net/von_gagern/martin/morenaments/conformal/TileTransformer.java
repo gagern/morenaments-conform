@@ -276,15 +276,20 @@ public class TileTransformer implements Runnable {
     }
 
     public Point2D transform(Point2D in, Point2D out) {
-        Triangle t1 = lastUsedTriangle, t2;
-        while (true) {
+        Triangle t1, t2;
+        for (t1 = lastUsedTriangle; true; t1 = t2) {
             t2 = t1.neighbourContaining(in);
             // logger.trace(t1 + " -> " + t2);
             if (t1 == t2) break;
             if (t2 == null) {
-                break;
+                if (lastUsedTriangle != centerTriangle) {
+                    t2 = lastUsedTriangle = centerTriangle; // fall back
+                }
+                else {
+                    logger.warn("Dealing with pixel outside triangle mesh");
+                    break;
+                }
             }
-            t1 = t2;
         }
         Vec3R v = new Vec3R(in.getX(), in.getY());
         v = t1.getProj().multiply(v);
