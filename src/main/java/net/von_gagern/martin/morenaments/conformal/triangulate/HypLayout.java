@@ -257,7 +257,7 @@ public class HypLayout {
                 tmp.assign(p.getX(), p.getY(), 1, 0);
                 check.transform(tmp, tmp);
                 double violation = tmp.x.r*tmp.y.i - tmp.x.i*tmp.y.r;
-                if (violation < 0)
+                if (violation < -1e-10)
                     continue CHECKS;
             }
             // all points outside a given check => not relevant

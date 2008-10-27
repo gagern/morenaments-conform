@@ -349,9 +349,9 @@ public class TileTransformer implements Runnable {
     }
 
     private boolean pixelCornerInside(AffineTransform tr, double x, double y) {
-        return pointInside(tr, x, y) ||
-               pointInside(tr, x+.5, y+.5) || pointInside(tr, x-.5, y-.5) ||
-               pointInside(tr, x+.5, y-.5) || pointInside(tr, x-.5, y+.5);
+        return pointInside(tr, x+.5, y+.5) ||
+               pointInside(tr, x+1, y+1) || pointInside(tr, x, y) ||
+               pointInside(tr, x+1, y) || pointInside(tr, x, y+1);
     }
 
     private boolean pointInside(AffineTransform tr, double x, double y) {
