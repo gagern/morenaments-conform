@@ -123,6 +123,10 @@ public class GUI extends JDesktopPane {
                 public void actionPerformed(ActionEvent e) {
                     tiling();
                 }}, imageActions)));
+        menu.add(new JMenuItem(aal(new AbstractAction("Extract Tile") {
+                public void actionPerformed(ActionEvent e) {
+                    tileExtract();
+                }}, imageActions)));
 
         for (Action a: imageActions)
             a.setEnabled(false);
@@ -354,6 +358,30 @@ public class GUI extends JDesktopPane {
         start(new TilingTask(img, g, size, newTitle));
     }
 
+    private void tileExtract() {
+        Group g = currentImageDisplay.getGroup();
+        if (g == null) {
+            Group.EuclideanGroup eg = (Group.EuclideanGroup)
+                JOptionPane.showInputDialog(this,
+                    "Select euclidean group",
+                    "Select Group",
+                    JOptionPane.QUESTION_MESSAGE, null,
+                    Group.EuclideanGroup.values(), null);
+            if (eg == null) return;
+            g = Group.getInstance(eg);
+        }
+        else {
+            g = g.clone();
+        }
+        AngleCountsDlg acdlg = new AngleCountsDlg(this);
+        acdlg.setGroup(g);
+        if (!acdlg.showModal()) return;
+        g.setHyperbolicAngles(acdlg.getAngles());
+        String newTitle = "HypTile of " + currentImageDisplay.getTitle();
+        BufferedImage img = currentImageDisplay.getImage();
+        start(new TileExtractTask(img, g, size, newTitle));
+    }
+
     public int getImageSize() {
         return size;
     }
@@ -426,6 +454,44 @@ public class GUI extends JDesktopPane {
             PixelLookupSource pls = new SimplePixelLookupSource(inImg, tr);
             TilingRenderer t = new TilingRenderer(g);
             outImg = t.render(pls, size, outImg);
+        }
+
+        protected void done() {
+            addImage(title, outImg, g);
+        }
+
+        protected void exception(Exception e) {
+            error(e);
+        }
+
+    }
+
+    private class TileExtractTask extends Work {
+        
+        private final String title;
+        private final BufferedImage inImg;
+        private final Group g;
+        private final int size;
+
+        private BufferedImage outImg;
+
+        public TileExtractTask(BufferedImage img, Group g, int size, String title) {
+            super(busy);
+            this.inImg = img;
+            this.g = g;
+            this.size = size;
+            this.title = title;
+        }
+
+        protected void doInBackground() throws Exception {
+            int inSize = inImg.getWidth();
+            if (inImg.getHeight() != inSize)
+                throw new Exception("Input image has to be square");
+            AffineTransform tr;
+            tr = SimplePixelLookupSource.unitDiskTransform(inSize);
+            PixelLookupSource pls = new SimplePixelLookupSource(inImg, tr);
+            TileExtractor te = new TileExtractor(g);
+            outImg = te.render(pls, size, outImg);
         }
 
         protected void done() {
