@@ -9,12 +9,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import net.von_gagern.martin.confoo.mesh.MetricMesh;
 import net.von_gagern.martin.confoo.mesh.SimpleTriangle;
 
 import net.von_gagern.martin.morenaments.conformal.Mat3x3R;
 
 public abstract class EucOrbifold implements MetricMesh<Vertex> {
+
+    private final Logger logger = Logger.getLogger(EucOrbifold.class);
 
     public static final int UNIT = 36;
 
@@ -96,6 +100,11 @@ public abstract class EucOrbifold implements MetricMesh<Vertex> {
         t.setProj(new Mat3x3R(x1*SCALE, x2*SCALE, x3*SCALE,
                               y1*SCALE, y2*SCALE, y3*SCALE,
                                     1.,       1.,       1.));
+        if (logger.isTraceEnabled())
+            logger.trace("Triangle (" + x1 + "," + y1 + "; " + x2 + "," + y2 +
+                         "; " + x3 + "," + y3 + ") at pos (" + x1*SCALE + "," +
+                         y1*SCALE + "; " + x2*SCALE + "," + y2*SCALE +
+                         "; " + x3*SCALE + "," + y3*SCALE + ")");
         ts.add(t);
     }
 

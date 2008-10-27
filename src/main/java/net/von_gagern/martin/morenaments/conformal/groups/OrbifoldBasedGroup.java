@@ -64,9 +64,35 @@ abstract class OrbifoldBasedGroup extends Group {
         ArrayList<Point2D> corners = new ArrayList<Point2D>(hypCorners.length);
         for (int i = 0; i < hypCorners.length; ++i)
             corners.add(hypCorners[i].dehomogenize(new Point2D.Double()));
-        if (logger.isDebugEnabled())
-            for (Point2D p: corners)
-                logger.debug("Corner at (" + p.getX() + ", " + p.getY() + ")");
+        if (logger.isDebugEnabled()) {
+            HypTrafo ht = new HypTrafo();
+            Vec2C v1 = new Vec2C(), v2 = new Vec2C();
+            Point2D p1 = new Point2D.Double(), p2 = new Point2D.Double();
+            int n = hypCorners.length;
+            for (int i = 0; i < n; ++i) {
+                logger.debug("Corner " + i + " at (" + corners.get(i).getX() +
+                             ", " + corners.get(i).getY() + ")");
+            }
+            for (int i = 0; i < n; ++i) {
+                ht.vec.assign(hypCorners[i]);
+                ht.inverseTransform(hypCorners[(i + n - 1)%n], v1);
+                ht.inverseTransform(hypCorners[(i + 1)%n], v2);
+                v1.dehomogenize(p1);
+                v2.dehomogenize(p2);
+                double a1 = Math.atan2(p1.getY(), p1.getX());
+                double a2 = Math.atan2(p2.getY(), p2.getX());
+                double deg = 180./Math.PI*(a1 - a2);
+                while (deg < 0) deg += 360;
+                logger.debug("Corner " + i + " has angle of " + deg + "°");
+            }
+            for (int i = 0; i < n; ++i) {
+                ht.vec.assign(hypCorners[i]);
+                ht.inverseTransform(hypCorners[(i + 1)%n], v1);
+                v1.dehomogenize(p1);
+                double len = Math.hypot(p1.getX(), p1.getY());
+                logger.debug("Edge " + i + " has length " + len);
+            }
+        }
         return corners;
     }
 

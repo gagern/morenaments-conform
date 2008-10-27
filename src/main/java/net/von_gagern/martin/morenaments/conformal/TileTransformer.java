@@ -60,6 +60,8 @@ public class TileTransformer implements Runnable {
         if (hypMesh != null) {
             dumpTriangles("hypMesh", hypMesh);
             lastUsedTriangle = centerTriangle = findCenter(hypMesh);
+            if (logger.isTraceEnabled())
+                dumpTriangles("hypMeshes", hypMesh, g.getGenerators());
             return;
         }
 
@@ -408,6 +410,111 @@ public class TileTransformer implements Runnable {
                 e2.printStackTrace();
             }
         }
+    }
+
+    public static void dumpTriangles(String name, LocatedMesh<Vertex> mesh,
+                                     HypTrafo[] trafos) {
+        double inset = 0.01;
+        double width = 600, height = 600;
+        File debugDir = new File("debug");
+        if (!debugDir.isDirectory()) return;
+        try {
+            File outFile = new File(debugDir, name + ".svg");
+            Rectangle2D rect = new Rectangle2D.Double();
+            logger.debug("Writing triangles to " + outFile.getPath());
+            Iterator<? extends CorneredTriangle<? extends Vertex>> ti;
+            ti = mesh.iterator();
+            Point2D p2d = new Point2D.Double();
+            while (ti.hasNext()) {
+                CorneredTriangle<? extends Vertex> t = ti.next();
+                for (int i = 0; i < 3; ++i) {
+                    Vertex v = t.getCorner(i);
+                    p2d.setLocation(mesh.getX(v), mesh.getY(v));
+                    rect.add(p2d);
+                }
+            }
+            logger.debug("Got boundary rect");
+            if (inset > 0) {
+                rect.add(rect.getMinX() - inset, rect.getMinY() - inset);
+                rect.add(rect.getMaxX() + inset, rect.getMaxY() + inset);
+            }
+            double factor = Math.min(width/rect.getWidth(),
+                                     height/rect.getHeight());
+            width = factor*rect.getWidth();
+            height = factor*rect.getHeight();
+            logger.debug("Writing meshes");
+            FileOutputStream outStream = new FileOutputStream(outFile);
+            SvgWriter svg = new SvgWriter(outStream);
+            svg.head(rect, width, height);
+            svg.writeTriangles(mesh);
+            for (HypTrafo t: trafos) {
+                svg.newLayer();
+                svg.writeTriangles(new TransformedMesh(mesh, t));
+            }
+            svg.tail();
+            logger.debug("Mesh written");
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            try {
+                ObjFormat obj = new ObjFormat(mesh, null);
+                File outFile = new File(debugDir, "exception.obj");
+                FileOutputStream outStream = new FileOutputStream(outFile);;
+                obj.write(outStream);
+                outStream.close();
+            }
+            catch (Exception e2) {
+                e2.printStackTrace();
+            }
+        }
+    }
+
+    private static class TransformedMesh implements LocatedMesh<Vertex> {
+
+        LocatedMesh<Vertex> parent;
+
+        HypTrafo trafo;
+
+        Vertex vertex;
+
+        Vec2C vec = new Vec2C();
+
+        TransformedMesh(LocatedMesh<Vertex> parent, HypTrafo trafo) {
+            this.parent = parent;
+            this.trafo = trafo;
+        }
+
+        public Iterator<? extends CorneredTriangle<? extends Vertex>>
+        iterator() {
+            return parent.iterator();
+        }
+
+        private void setVertex(Vertex v) {
+            if (this.vertex == v) return;
+            vertex = v;
+            vec.assign(parent.getX(v), parent.getY(v), 1, 0);
+            trafo.transform(vec, vec);
+            vec.dehomogenize();
+        }
+
+        public double getX(Vertex v) {
+            setVertex(v);
+            return vec.x.r;
+        }
+
+        public double getY(Vertex v) {
+            setVertex(v);
+            return vec.x.i;
+        }
+
+        public double getZ(Vertex v) {
+            return 0;
+        }
+
+        public double edgeLength(Vertex v1, Vertex v2) {
+            return parent.edgeLength(v1, v2);
+        }
+
     }
 
 }

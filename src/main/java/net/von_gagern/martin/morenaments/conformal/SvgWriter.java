@@ -32,6 +32,9 @@ class SvgWriter {
 
     private static final String NS = "http://www.w3.org/2000/svg";
 
+    private static final String INKSCAPE =
+        "http://www.inkscape.org/namespaces/inkscape";
+
     private XMLStreamWriter svg;
 
     private String encoding = null;
@@ -39,6 +42,8 @@ class SvgWriter {
     private double defaultStrokeWidth = 0.001;
 
     private Set<String> uniqueIds = new HashSet<String>();
+
+    private int layers = 1;
 
     public SvgWriter(OutputStream out) throws XMLStreamException {
         encoding = "UTF-8";
@@ -64,9 +69,9 @@ class SvgWriter {
     {
         svg.writeStartElement(NS, "g");
         writeIdIfUnique("triangles");
-        svg.writeAttribute("stroke", "#060");
+        svg.writeAttribute("stroke", "#006");
         svg.writeAttribute("stroke-width", format(defaultStrokeWidth));
-        svg.writeAttribute("fill", "#f90");
+        svg.writeAttribute("fill", "none");
         svg.writeAttribute("fill-opacity", "30%");
         svg.writeCharacters("\n");
         for (Iterator<? extends CorneredTriangle<? extends V>> i =
@@ -108,13 +113,28 @@ class SvgWriter {
         svg.writeDTD(DOCTYPE);
         svg.writeCharacters("\n");
         svg.setDefaultNamespace(NS);
+        svg.setPrefix("inkscape", INKSCAPE);
         svg.writeStartElement(NS, "svg");
         svg.writeDefaultNamespace(NS);
+        svg.writeNamespace("inkscape", INKSCAPE);
         svg.writeAttribute("version", VERSION);
         svg.writeAttribute("width", format(width));
         svg.writeAttribute("height", format(height));
         svg.writeAttribute("viewBox", viewBox);
         svg.writeAttribute("fill", "none");
+        svg.writeCharacters("\n");
+        svg.writeStartElement(NS, "g");
+        svg.writeAttribute(INKSCAPE, "groupmode", "layer");
+        svg.writeAttribute(INKSCAPE, "label", "Layer 1");
+        svg.writeCharacters("\n");
+    }
+
+    public void newLayer() throws XMLStreamException {
+        svg.writeEndElement();
+        svg.writeCharacters("\n");
+        svg.writeStartElement(NS, "g");
+        svg.writeAttribute(INKSCAPE, "groupmode", "layer");
+        svg.writeAttribute(INKSCAPE, "label", "Layer " + (++layers));
         svg.writeCharacters("\n");
     }
 
@@ -148,6 +168,8 @@ class SvgWriter {
     }
 
     public void tail() throws XMLStreamException {
+        svg.writeEndElement();
+        svg.writeCharacters("\n");
         svg.writeEndElement();
         svg.writeCharacters("\n");
         svg.writeEndDocument();
