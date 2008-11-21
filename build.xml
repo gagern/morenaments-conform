@@ -1,0 +1,91 @@
+<project name="conformal" default="all"
+	 xmlns:ivy="antlib:org.apache.ivy.ant">
+
+  <property file="build/local.properties"/>
+  <property file="build/sign.properties"/>
+  <property file="build/build.properties"/>
+
+  <property name="api.version" value="1.5"/>
+  <property name="artifact.name" value="${ant.project.name}"/>
+  <property name="ivy.settings.file" value="build/ivysettings.xml"/>
+
+  <target name="clean">
+    <delete dir="target"/>
+  </target>
+
+  <target name="deps">
+    <ivy:configure/>
+    <ivy:resolve/>
+    <ivy:retrieve pattern="lib/[conf]/[artifact].[ext]" />
+  </target>
+
+  <target name="compile">
+    <mkdir dir="target/main/classes"/>
+    <mkdir dir="target/main/java"/> <!-- dir for generated sources -->
+    <path id="build.classpath">
+      <fileset dir="lib/default">
+	<include name="*.jar"/>
+      </fileset>
+    </path>
+    <javac destdir="target/main/classes"
+	   debug="true" deprecation="true" optimize="false"
+	   source="${api.version}" target="${api.version}">
+      <compilerarg value="-Xlint:all,-serial,-path" compiler="modern"/>
+      <src path="src/main/java"/>
+      <src path="target/main/java"/>
+      <classpath refid="build.classpath"/>
+    </javac>
+    <copy todir="target/main/classes">
+      <fileset dir="src/main/resources"/>
+    </copy>
+  </target>
+
+  <target name="compile-tests" depends="compile">
+    <mkdir dir="target/test/classes"/>
+    <mkdir dir="target/test/java"/> <!-- dir for generated sources -->
+    <path id="test.classpath">
+      <pathelement location="target/main/classes"/>
+      <fileset dir="lib/test">
+	<include name="*.jar"/>
+      </fileset>
+      <path refid="build.classpath"/>
+    </path>
+    <javac destdir="target/test/classes"
+	   debug="true" deprecation="true" optimize="false"
+	   source="${api.version}" target="${api.version}">
+      <src path="src/test/java"/>
+      <src path="target/test/java"/>
+      <classpath refid="test.classpath"/>
+    </javac>
+    <copy todir="target/test/classes">
+      <fileset dir="src/test/resources"/>
+    </copy>
+  </target>
+
+  <target name="jar" depends="compile">
+    <pathconvert dirsep="/" pathsep=" " property="jar.path">
+      <path refid="build.classpath"/>
+      <mapper type="flatten"/>
+    </pathconvert>
+    <jar destfile="target/${artifact.name}.jar" index="true">
+      <manifest>
+	<attribute name="Main-Class" value="${project.main}"/>
+	<attribute name="Class-Path" value="${jar.path}"/>
+      </manifest>
+      <indexjars refid="build.classpath"/>
+      <fileset dir="target/main/classes"/>
+    </jar>
+  </target>
+
+  <target name="jars" depends="jar">
+    <mkdir dir="target/jars"/>
+    <copy todir="target/jars">
+      <fileset file="target/${artifact.name}.jar"/>
+      <path refid="build.classpath"/>
+    </copy>
+  </target>
+
+  <target name="all" depends="deps,jar">
+  </target>
+
+</project>
