@@ -24,7 +24,7 @@ public class Mat3x3R implements Cloneable {
     }
 
     public Mat3x3R clone() {
-        return new Mat3x3R((double[])m.clone());
+        return new Mat3x3R(m.clone());
     }
 
     public double get(int row, int col) {

@@ -105,7 +105,7 @@ public class Triangulation
         Set<Edge> edgeSet = new HashSet<Edge>();
         for (Triangle t: triangles)
             edgeSet.addAll(t.edges());
-        q = new PriorityQueue(1000, EdgeLengthComparator.getInstance());
+        q = new PriorityQueue<Edge>(1000, EdgeLengthComparator.getInstance());
         for (Edge e: edgeSet)
             enqueue(e);
         while (!q.isEmpty())
