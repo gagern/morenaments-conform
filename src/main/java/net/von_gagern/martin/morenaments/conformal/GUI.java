@@ -41,6 +41,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 
+import javax.media.opengl.GLAutoDrawable;
+import javax.media.opengl.GLCanvas;
+import javax.media.opengl.GLCapabilities;
 import org.apache.log4j.Logger;
 
 import de.tum.in.gagern.hornamente.BusyFeedback;
@@ -126,6 +129,13 @@ public class GUI extends JDesktopPane {
         menu.add(new JMenuItem(aal(new AbstractAction("Extract Tile") {
                 public void actionPerformed(ActionEvent e) {
                     tileExtract();
+                }}, imageActions)));
+
+        menu = new JMenu("View");
+        bar.add(menu);
+        menu.add(new JMenuItem(aal(new AbstractAction("OpenGL RPL") {
+                public void actionPerformed(ActionEvent e) {
+                    openGlRpl();
                 }}, imageActions)));
 
         for (Action a: imageActions)
@@ -380,6 +390,19 @@ public class GUI extends JDesktopPane {
         String newTitle = "HypTile of " + currentImageDisplay.getTitle();
         BufferedImage img = currentImageDisplay.getImage();
         start(new TileExtractTask(img, g, size, newTitle));
+    }
+
+    private void openGlRpl() {
+	JFrame frm = new JFrame("OpenGlRpl");
+	GLCapabilities capa = new GLCapabilities();
+	//capa.setSampleBuffers(true);
+	GLAutoDrawable glad = new GLCanvas(capa);
+        OpenGlRpl ogrpl = new OpenGlRpl(currentImageDisplay.getImage());
+	glad.addGLEventListener(ogrpl);
+	frm.getContentPane().add((Component)glad);
+	frm.setSize(500, 500);
+	frm.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	frm.setVisible(true);
     }
 
     public int getImageSize() {

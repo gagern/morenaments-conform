@@ -38,17 +38,20 @@
     <copy todir="target/main/classes">
       <fileset dir="src/main/resources"/>
     </copy>
+    <path id="run.classpath">
+      <pathelement location="target/main/classes"/>
+      <path refid="build.classpath"/>
+    </path>
   </target>
 
   <target name="compile-tests" depends="compile">
     <mkdir dir="target/test/classes"/>
     <mkdir dir="target/test/java"/> <!-- dir for generated sources -->
     <path id="test.classpath">
-      <pathelement location="target/main/classes"/>
+      <path refid="run.classpath"/>
       <fileset dir="lib/test">
 	<include name="*.jar"/>
       </fileset>
-      <path refid="build.classpath"/>
     </path>
     <javac destdir="target/test/classes"
 	   debug="true" deprecation="true" optimize="false"
@@ -75,6 +78,18 @@
       <indexjars refid="build.classpath"/>
       <fileset dir="target/main/classes"/>
     </jar>
+  </target>
+
+  <target name="run" depends="compile">
+    <property name="run.jvmargs" value=""/>
+    <property name="run.args" value=""/>
+    <java classname="${project.main}" fork="true">
+      <classpath refid="run.classpath"/>
+      <sysproperty key="java.library.path" path="lib/default"/>
+      <assertions><enable/></assertions>
+      <jvmarg line="${run.jvmargs}"/>
+      <arg line="${run.args}"/>
+    </java>
   </target>
 
   <target name="jars" depends="jar">
