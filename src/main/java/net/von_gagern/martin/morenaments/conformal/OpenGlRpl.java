@@ -41,9 +41,6 @@ class OpenGlRpl implements GLEventListener {
     private boolean debug = true;
     private static Map<String, String> sources = new HashMap<String, String>();
 
-    private static final int checkImageWidth = 64;
-    private static final int checkImageHeight = 64;
-    private Buffer checkImage;
     private int texName;
     private int shaderProgram;
     private static final float grayLevel = 12.f/15.f;
@@ -53,20 +50,6 @@ class OpenGlRpl implements GLEventListener {
 
     public OpenGlRpl(BufferedImage img) {
         this.tile = img;
-	// makeCheckImage();
-    }
-
-    private void makeCheckImage() {
-	ByteBuffer img;
-	img = ByteBuffer.allocate(checkImageWidth*checkImageHeight*4);
-	for (int i = 0; i < checkImageHeight; i++) {
-	    for (int j = 0; j < checkImageWidth; j++) {
-		byte c = ((((i&0x8)==0)^((j&0x8))==0)) ? (byte)255 : (byte)0;
-		img.put(c).put(c).put(c).put((byte)255);
-	    }
-	}
-	img.rewind();
-	checkImage = img;
     }
 
     public void init(GLAutoDrawable drawable) {
@@ -191,9 +174,8 @@ class OpenGlRpl implements GLEventListener {
 	if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
 	String log = new String(logBytes, 0, intBuf[0]);
 	if (!"".equals(log)) {
-	    System.out.println("=== begin shader info log ===");
-	    System.out.println(log);
-	    System.out.println("=== end shader info log ===");
+            logger.info("Fragment shader log:");
+            logger.info(log);
 	}
 	
 	// check compilation status
@@ -223,26 +205,18 @@ class OpenGlRpl implements GLEventListener {
 	if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
 	log = new String(logBytes, 0, intBuf[0]);
 	if (!"".equals(log)) {
-	    System.out.println("=== begin shader program info log ===");
-	    System.out.println(log);
-	    System.out.println("=== end shader program info log ===");
+            logger.info("Shader program log:");
+            logger.info(log);
 	}
 
 	gl.glUseProgram(shaderProgram);
-	int texLoc = gl.glGetUniformLocation(shaderProgram, "texSampler");
-	gl.glUniform1i(texLoc, 0);
+	gl.glUniform1i(gl.glGetUniformLocation(shaderProgram, "texSampler"), 0);
     }
 
     public void display(GLAutoDrawable drawable) {
 	GL gl = drawable.getGL();
 	gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	gl.glEnable(GL_TEXTURE_2D);
-
-	gl.glEnable(GL_MULTISAMPLE);
-	//gl.glSampleCoverage(0.f, false);
-	int[] intBuf = new int[1];
-	gl.glGetIntegerv(GL_SAMPLE_BUFFERS, intBuf, 0);
-	//System.out.println("display: " + intBuf[0]);
 
 	gl.glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 	gl.glBindTexture(GL_TEXTURE_2D, texName);
@@ -262,15 +236,34 @@ class OpenGlRpl implements GLEventListener {
 	gl.glMatrixMode(GL_PROJECTION);
 	gl.glLoadIdentity();
         double w, h;
+        float pixelSize;
         if (width < height) {
             w = 1;
             h = height/(double)width;
+            pixelSize = 2.f/width;
         }
         else {
             w = width/(double)height;
             h = 1;
+            pixelSize = 2.f/height;
         }
 	gl.glOrtho(-w, w, -h, h, 0., 1.);
+
+        float[] aaOffsets = new float[9*3];
+        float basicOffset = pixelSize/3.f;
+        int i = 0;
+        for (int dx = -1; dx <= 1; ++dx) {
+            for (int dy = -1; dy <= 1; ++dy) {
+                aaOffsets[i++] = dx*basicOffset;
+                aaOffsets[i++] = dy*basicOffset;
+                aaOffsets[i++] = 1.f;
+            }
+        }
+        int numAaOffsets = i/3;
+        gl.glUniform3fv(gl.glGetUniformLocation(shaderProgram, "aaOffsets"),
+                        numAaOffsets, aaOffsets, 0);
+	gl.glUniform1i(gl.glGetUniformLocation(shaderProgram, "numAaOffsets"),
+                       numAaOffsets);        
     }
 
     public void displayChanged(GLAutoDrawable drawable,
