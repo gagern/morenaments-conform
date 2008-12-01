@@ -1,11 +1,36 @@
 package net.von_gagern.martin.morenaments.conformal;
 
-import java.awt.*;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Transparency;
 import java.awt.color.ColorSpace;
-import java.awt.image.*;
-import java.nio.*;
-import javax.swing.*;
-import javax.media.opengl.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.PixelInterleavedSampleModel;
+import java.awt.image.Raster;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.MissingResourceException;
+import javax.media.opengl.DebugGL;
+import javax.media.opengl.GL;
+import javax.media.opengl.GLAutoDrawable;
+import javax.media.opengl.GLEventListener;
+
 import org.apache.log4j.Logger;
 
 import static javax.media.opengl.GL.*;
@@ -14,6 +39,7 @@ class OpenGlRpl implements GLEventListener {
 
     private final Logger logger = Logger.getLogger(OpenGlRpl.class);
     private boolean debug = true;
+    private static Map<String, String> sources = new HashMap<String, String>();
 
     private static final int checkImageWidth = 64;
     private static final int checkImageHeight = 64;
@@ -115,22 +141,46 @@ class OpenGlRpl implements GLEventListener {
 			0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     }
 
-    private void initShader(GL gl) {
-	String fSrc =
-          "const vec4 bgColor = vec4(12./15., 12./15., 12./15., 1.);\n" +
-          "uniform sampler2D texSampler;\n" +
-          "void main() {\n" +
-          " vec2 v = vec2(gl_TexCoord[0]);\n" +
-          " if(v.x*v.x + v.y*v.y > 1.) {\n" +
-          "  gl_FragColor = bgColor;\n" +
-          " } else {\n" +
-          "  gl_FragColor = texture2D(texSampler, v);\n" +
-          " }" +
-          "}";
+    private static String loadSource(String name) {
+        InputStream stream = OpenGlRpl.class.getResourceAsStream(name);
+        if (stream == null)
+            throw new MissingResourceException("Missing shader source code",
+                                               OpenGlRpl.class.getName(), name);
+        try {
+            int sizeEstimate = Math.max(500, stream.available() + 8);
+            CharsetDecoder dec = Charset.forName("US-ASCII").newDecoder();
+            dec.onUnmappableCharacter(CodingErrorAction.REPORT);
+            dec.onMalformedInput(CodingErrorAction.REPORT);
+            Reader reader = new InputStreamReader(stream, dec);
+            reader = new BufferedReader(reader, sizeEstimate);
+            StringBuilder buf = new StringBuilder(sizeEstimate);
+            int c;
+            while ((c = reader.read()) != -1)
+                buf.append((char)c);
+            reader.close();
+            return buf.toString();
+        }
+        catch (IOException e) {
+            throw new RuntimeException("Error loading shader source code", e);
+        }
+    }
 
+    private static String getSource(String name) {
+        String src = sources.get(name);
+        if (src == null) {
+            src = loadSource(name);
+            sources.put(name, src);
+        }
+        return src;
+    }
+
+    private void initShader(GL gl) {
+        String[] fSrc = { "vsRpl.gsl" };
+        for (int i = 0; i < fSrc.length; ++i)
+            fSrc[i] = getSource(fSrc[i]);
 	int[] intBuf = new int[1];
 	int shader = gl.glCreateShader(GL_FRAGMENT_SHADER);
-	gl.glShaderSource(shader, 1, new String[]{fSrc}, null);
+	gl.glShaderSource(shader, fSrc.length, fSrc, null);
 	gl.glCompileShader(shader);
 
 	// get log message

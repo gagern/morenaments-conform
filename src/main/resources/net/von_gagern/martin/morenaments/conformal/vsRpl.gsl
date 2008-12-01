@@ -1,0 +1,21 @@
+
+const vec4 bgColor = vec4(12./15., 12./15., 12./15., 1.);
+
+uniform sampler2D texSampler;
+
+void main() {
+    vec2 v = vec2(gl_TexCoord[0]);
+    if(v.x*v.x + v.y*v.y > 1.) {
+        gl_FragColor = bgColor;
+    } else {
+        gl_FragColor = texture2D(texSampler, v);
+    }
+}
+
+/* For emacs:
+ * Local Variables:
+ * mode:c
+ * c-basic-offset:4
+ * indent-tabs-mode:nil
+ * End:
+ */
