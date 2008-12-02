@@ -33,23 +33,33 @@ import javax.media.opengl.GLEventListener;
 
 import org.apache.log4j.Logger;
 
+import de.tum.in.gagern.hornamente.HypTrafo;
+import de.tum.in.gagern.hornamente.Vec2C;
+import net.von_gagern.martin.morenaments.conformal.groups.Group;
+
 import static javax.media.opengl.GL.*;
 
 class OpenGlRpl implements GLEventListener {
 
     private final Logger logger = Logger.getLogger(OpenGlRpl.class);
-    private boolean debug = true;
-    private static Map<String, String> sources = new HashMap<String, String>();
+    private boolean debug = false;
 
+    private BufferedImage tile;
+    private Group grp;
+
+    private static Map<String, String> sources = new HashMap<String, String>();
+    private Map<String, Integer> uniLocCache = new HashMap<String, Integer>();
     private int texName;
     private int shaderProgram;
     private static final float grayLevel = 12.f/15.f;
     private float[] background = { grayLevel, grayLevel, grayLevel, 1.0f };
     private int maxTextureSize;
-    private BufferedImage tile;
+    private static final HypTrafo flipReal =
+        new HypTrafo(new Vec2C(0., 0., 1., 0.), true);
 
-    public OpenGlRpl(BufferedImage img) {
+    public OpenGlRpl(BufferedImage img, Group g) {
         this.tile = img;
+        this.grp = g;
     }
 
     public void init(GLAutoDrawable drawable) {
@@ -158,7 +168,7 @@ class OpenGlRpl implements GLEventListener {
     }
 
     private void initShader(GL gl) {
-        String[] fSrc = { "vsRpl.gsl" };
+        String[] fSrc = { "fsRpl.gls" };
         for (int i = 0; i < fSrc.length; ++i)
             fSrc[i] = getSource(fSrc[i]);
 	int[] intBuf = new int[1];
@@ -187,7 +197,21 @@ class OpenGlRpl implements GLEventListener {
 	shaderProgram = gl.glCreateProgram();
 	gl.glAttachShader(shaderProgram, shader);
 
+        uniLocCache.clear();
 	gl.glLinkProgram(shaderProgram);
+	// get log message
+	gl.glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, intBuf, 0);
+	logBytes = new byte[intBuf[0] + 1];
+	gl.glGetProgramInfoLog(shaderProgram, logBytes.length,
+			       intBuf, 0, logBytes, 0);
+	if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
+	log = new String(logBytes, 0, intBuf[0]);
+	if (!"".equals(log)) {
+            logger.info("Shader program log:");
+            logger.info(log);
+	}
+
+
 	gl.glGetProgramiv(shaderProgram, GL_LINK_STATUS, intBuf, 0);
 	if (intBuf[0] != GL_TRUE)
 	    throw new RuntimeException("Error linking GLS");
@@ -210,7 +234,45 @@ class OpenGlRpl implements GLEventListener {
 	}
 
 	gl.glUseProgram(shaderProgram);
-	gl.glUniform1i(gl.glGetUniformLocation(shaderProgram, "texSampler"), 0);
+	gl.glUniform1i(uniLoc(gl, "texSampler"), 0);
+        gl.glUniform4fv(uniLoc(gl, "bgColor"), 1, background, 0);
+	gl.glUniform1i(uniLoc(gl, "maxPathLength"), 50);
+        gl.glUniform4f(uniLoc(gl, "initialTrafo"), 0.f, 0.f, 1.f, 0.f);
+        initGroup(gl);
+    }
+
+    private void vec4ForHypTrafo(HypTrafo tr, float[] v, int i) {
+        v[i++] = (float)tr.vec.x.r;
+        v[i++] = (float)tr.vec.x.i;
+        v[i++] = (float)tr.vec.y.r;
+        v[i++] = (float)tr.vec.y.i;
+    }
+
+    private void initGroup(GL gl) {
+        HypTrafo[] gens = grp.getGenerators();
+        HypTrafo[] incs = grp.getInsidenessChecks();
+        final int n = gens.length;
+        assert incs.length == n;
+        float[] ic = new float[n<<2], gm = new float[n<<2], gp = new float[n];
+        float[] ip = new float[n];
+        for (int i = 0; i < n; ++i) {
+            HypTrafo inc = incs[i], gen = gens[i];
+            gen = gen.getInverse();
+            /*
+            if (inc.doConj)
+                inc = flipReal.clone().concatenate(inc);
+            assert !inc.doConj;
+            */
+            vec4ForHypTrafo(inc, ic, i<<2);
+            vec4ForHypTrafo(gen, gm, i<<2);
+            gp[i] = gen.doConj ? -1.f : 1.f;
+            ip[i] = inc.doConj ? -1.f : 1.f;
+        }
+	gl.glUniform1i(uniLoc(gl, "numGenerators"), n);
+        gl.glUniform4fv(uniLoc(gl, "insidenessChecks"), n, ic, 0);
+        gl.glUniform1fv(uniLoc(gl, "insidenessCheckParity"), n, ip, 0);
+	gl.glUniform4fv(uniLoc(gl, "genMatrix"), n, gm, 0);        
+        gl.glUniform1fv(uniLoc(gl, "genParity"), n, gp, 0);
     }
 
     public void display(GLAutoDrawable drawable) {
@@ -260,16 +322,23 @@ class OpenGlRpl implements GLEventListener {
             }
         }
         int numAaOffsets = i/3;
-        gl.glUniform3fv(gl.glGetUniformLocation(shaderProgram, "aaOffsets"),
-                        numAaOffsets, aaOffsets, 0);
-	gl.glUniform1i(gl.glGetUniformLocation(shaderProgram, "numAaOffsets"),
-                       numAaOffsets);        
+        gl.glUniform3fv(uniLoc(gl, "aaOffsets"), numAaOffsets, aaOffsets, 0);
+	gl.glUniform1i(uniLoc(gl, "numAaOffsets"), numAaOffsets);
     }
 
     public void displayChanged(GLAutoDrawable drawable,
 			       boolean modeChanged,
 			       boolean deviceChanged) {
 	GL gl = drawable.getGL();
+    }
+
+    private int uniLoc(GL gl, String name) {
+        Integer loc = uniLocCache.get(name);
+        if (loc == null) {
+            loc = Integer.valueOf(gl.glGetUniformLocation(shaderProgram, name));
+            uniLocCache.put(name, loc);
+        }
+        return loc.intValue();
     }
 
 }

@@ -1,0 +1,123 @@
+#version 110
+
+const vec4 errorColor = vec4(1., 0., 0., 1.);
+const vec4 pathTooLong = vec4(0., 0., 0., 0.);
+
+uniform sampler2D texSampler;
+uniform vec4 bgColor;
+uniform int maxPathLength;
+uniform vec4 initialTrafo;
+
+const int maxGenerators = 6;
+uniform int numGenerators;
+uniform vec4 insidenessChecks[maxGenerators];
+uniform float insidenessCheckParity[maxGenerators];
+uniform vec4 genMatrix[maxGenerators];
+uniform float genParity[maxGenerators];
+
+const int maxAaOffsets = 17;
+uniform int numAaOffsets;
+uniform vec3 aaOffsets[maxAaOffsets];
+
+vec4 transform(const vec4 m, const float p, vec4 v) {
+    v.y *= p;
+    v.w *= p;
+    return vec4(m.z*v.x + m.w*v.y + m.x*v.z - m.y*v.w,
+                m.z*v.y - m.w*v.x + m.y*v.z + m.x*v.w,
+                m.x*v.x + m.y*v.y + m.z*v.z - m.w*v.w,
+                m.x*v.y - m.y*v.x + m.w*v.z + m.z*v.w);
+}
+
+int maxViolation(const vec4 v, out float violation) {
+    int mostViolated = -1;
+    violation = 0.0;
+    int i;
+    for (i = 0; i < numGenerators; ++i) {
+        vec4 v2 = transform(insidenessChecks[i], insidenessCheckParity[i], v);
+        v2 = normalize(v2); // TODO
+        float viol = v2.x*v2.w - v2.y*v2.z;
+        if (viol < violation) continue;
+        violation = viol;
+        mostViolated = i;
+    }
+    return mostViolated;
+}
+
+vec4 findTrafo(const vec4 v0, inout vec4 trM, inout float trP) {
+    vec4 v = transform(trM, trP, v0);
+    int count;
+    float minViolation = 0.0;
+    vec4 minViolM = initialTrafo;
+    float minViolP = 1.0;
+    for (count = 0; count < maxPathLength; ++count) {
+        float violation;
+        int violated;
+        violated = maxViolation(v, violation);
+        if (violated < 0)
+            return v;
+        if (violation < minViolation || count == 0) {
+            // Current transform is not perfect but our best bet.
+            minViolation = violation;
+            minViolM = trM;
+            minViolP = trP;
+        }
+        else {
+            // Decay minViolation in order to prefer shorter paths.
+            minViolation *= 0.75;
+        }
+        float p = genParity[violated];
+        trM = transform(genMatrix[violated], p, trM);
+        trP *= p;
+        v = transform(trM, trP, v0);
+    }
+    return pathTooLong;
+    /* TODO
+    // We didn't manage to get inside the central fundamental domain,
+    // probably due to small numeric errors. We use our best bet instead.
+    trM = minViolM;
+    trP = minViolP;
+    return transform(trM, trP, v0);
+    */
+}
+
+vec4 sample(vec2 pos, inout vec4 trM, inout float trP) {
+    if (pos.x*pos.x + pos.y*pos.y >= 1.0)
+        return bgColor;
+    vec4 v0 = vec4(pos.x, pos.y, 1.0, 0.0);
+
+    /* Debug code: mark outline of central tile
+    float dummy;
+    if (maxViolation(v0, dummy) == -1) return vec4(0., 1., 0., 1.);
+    else return vec4(1., 0., 0., 0.);
+    */
+
+    vec4 v = findTrafo(v0, trM, trP);
+    if (v == pathTooLong)
+        return errorColor;
+    vec3 rp2 = v.z*v.xyz + v.w*vec3(v.y, -v.x, v.w);
+    return texture2D(texSampler, rp2.xy/rp2.z/2.0 + vec2(0.5, 0.5));
+}
+
+void main(void) {
+    vec4 v = gl_TexCoord[0];
+    vec4 trM = initialTrafo;
+    float trP = 1.0;
+    vec4 sumColors = vec4(0.0, 0.0, 0.0, 0.0);
+    float sumWeights = 0.0;
+    int i;
+    for (i = 0; i < numAaOffsets; ++i) {
+        vec3 aa = aaOffsets[i];
+        vec4 sampleColor = sample(v.xy + aa.xy, trM, trP);
+        sumColors += aa.z * sampleColor;
+        sumWeights += aa.z;
+    }
+    gl_FragColor = sumColors / sumWeights;
+}
+
+/* For emacs:
+ * Local Variables:
+ * mode:c
+ * c-basic-offset:4
+ * indent-tabs-mode:nil
+ * End:
+ */
