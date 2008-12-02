@@ -2,6 +2,7 @@ package net.von_gagern.martin.morenaments.conformal;
 
 import java.awt.Component;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
@@ -11,6 +12,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
@@ -70,9 +72,13 @@ class OpenGlRpl implements GLEventListener,
     private static final HypTrafo flipReal =
         new HypTrafo(new Vec2C(0., 0., 0., 1.), true);
     private int intendedZoomStep, currentZoomStep;
-    private double zoom = 1.;
+    private double pixelSize;
     private Timer cancelDraftTimer;
-    private boolean useDraft = true, intendedDraft = false, currentDraft;
+    private boolean useDraft = false, intendedDraft = false, currentDraft;
+    private Point panStartPos;
+    private boolean updateViewport;
+    private Point2D.Double lastCenter = new Point2D.Double();
+    private Point2D.Double center = new Point2D.Double();
 
     public OpenGlRpl(BufferedImage img, Group g) {
         this.tile = img;
@@ -306,7 +312,7 @@ class OpenGlRpl implements GLEventListener,
 
     public void display(GLAutoDrawable drawable) {
 	GL gl = drawable.getGL();
-        if (intendedZoomStep != currentZoomStep)
+        if (updateViewport || intendedZoomStep != currentZoomStep)
             setupViewport(gl, cmp.getWidth(), cmp.getHeight());
         if (currentDraft != intendedDraft)
             draftQuality(gl, intendedDraft);
@@ -328,34 +334,43 @@ class OpenGlRpl implements GLEventListener,
     public void reshape(GLAutoDrawable drawable,
                         int x, int y, int width, int height) {
 	GL gl = drawable.getGL();
+        useDraft = width*height > 512*512;
         setupViewport(gl, width, height);
         triggerDraft();
+    }
+
+    private double clamp(double min, double val, double max) {
+        return Math.min(max, Math.max(min, val));
     }
 
     private void setupViewport(GL gl, int width, int height) {
 	gl.glMatrixMode(GL_PROJECTION);
 	gl.glLoadIdentity();
         double w, h;
-        float pixelSize;
         if (width < height) {
             w = 1;
             h = height/(double)width;
-            pixelSize = 2.f/width;
+            pixelSize = 2./width;
         }
         else {
             w = width/(double)height;
             h = 1;
-            pixelSize = 2.f/height;
+            pixelSize = 2./height;
         }
+
         currentZoomStep = intendedZoomStep;
-        zoom = Math.pow(0.9, currentZoomStep);
-        w *= zoom;
-        h *= zoom;
+        double zoom = Math.pow(0.9, currentZoomStep);
         pixelSize *= zoom;
-	gl.glOrtho(-w, w, -h, h, 0., 1.);
+        double wz = w*zoom, hz = h*zoom;
+        if (wz >= 1.) center.x = 0.;
+        else center.x = clamp(wz - 1., center.x, 1. - wz);
+        if (hz >= 1.) center.y = 0.;
+        else center.y = clamp(hz - 1., center.y, 1. - hz);
+        double cx = center.x, cy = center.y;
+	gl.glOrtho(cx-wz, cx+wz, cy+hz, cy-hz, 0., 1.);
 
         float[] aaOffsets = new float[9*3];
-        float basicOffset = pixelSize/3.f;
+        float basicOffset = (float)(pixelSize/3.);
         int i = 0;
         for (int dx = 1; dx <= 3; ++dx) {
             for (int dy = 1; dy <= 3; ++dy) {
@@ -383,9 +398,9 @@ class OpenGlRpl implements GLEventListener,
     }
 
     private void triggerDraft() {
+        cmp.repaint();
         intendedDraft = useDraft;
         cancelDraftTimer.restart();
-        cmp.repaint();
     }
 
     private void draftQuality(GL gl, boolean draft) {
@@ -401,9 +416,12 @@ class OpenGlRpl implements GLEventListener,
     }
 
     public void mousePressed(MouseEvent evnt) {
+        panStartPos = evnt.getPoint();
+        lastCenter.setLocation(center);
     }
 
     public void mouseReleased(MouseEvent evnt) {
+        panStartPos = null;
     }
 
     public void mouseClicked(MouseEvent evnt) {
@@ -413,6 +431,13 @@ class OpenGlRpl implements GLEventListener,
     }
 
     public void mouseDragged(MouseEvent evnt) {
+        if (panStartPos != null) {
+            double dx = (evnt.getX() - panStartPos.x)*pixelSize;
+            double dy = (evnt.getY() - panStartPos.y)*pixelSize;
+            center.setLocation(lastCenter.x - dx, lastCenter.y - dy);
+            updateViewport = true;
+            triggerDraft();
+        }
     }
 
     public void mouseWheelMoved(MouseWheelEvent evnt) {
