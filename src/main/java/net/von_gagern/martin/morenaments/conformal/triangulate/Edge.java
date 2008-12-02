@@ -97,6 +97,18 @@ public class Edge {
     public void setTriangle(Vertex p1, Vertex p2, Triangle t) {
         if (this.p1 == p1) {
             assert this.p2 == p2;
+            left = t;
+        }
+        else {
+            assert this.p1 == p2;
+            assert this.p2 == p1;
+            right = t;
+        }
+    }
+
+    public void initTriangle(Vertex p1, Vertex p2, Triangle t) {
+        if (this.p1 == p1) {
+            assert this.p2 == p2;
             assert left == null: "Shouldn't overwrite existing neighbour";
             left = t;
         }

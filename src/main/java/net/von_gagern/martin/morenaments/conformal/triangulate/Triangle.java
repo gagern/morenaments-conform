@@ -66,7 +66,7 @@ public class Triangle implements CorneredTriangle<Vertex> {
 
     public void registerWithEdges() {
         for (int i = 0; i < 3; ++i)
-            es.get(i).setTriangle(vs.get((i + 1)%3), vs.get((i + 2)%3), this);
+            es.get(i).initTriangle(vs.get((i + 1)%3), vs.get((i + 2)%3), this);
     }
 
     public Edge otherEdge(Edge e, Vertex v) {
