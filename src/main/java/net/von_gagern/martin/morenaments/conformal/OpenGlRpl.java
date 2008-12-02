@@ -56,9 +56,9 @@ class OpenGlRpl implements GLEventListener,
     private final Logger logger = Logger.getLogger(OpenGlRpl.class);
     private boolean debug = true;
 
-    private Component cmp;
     private BufferedImage tile;
     private Group grp;
+    private final Component cmp;
 
     private static Map<String, String> sources = new HashMap<String, String>();
     private Map<String, Integer> uniLocCache = new HashMap<String, Integer>();
@@ -69,7 +69,8 @@ class OpenGlRpl implements GLEventListener,
     private int maxTextureSize;
     private static final HypTrafo flipReal =
         new HypTrafo(new Vec2C(0., 0., 0., 1.), true);
-    private int zoomStep = 0;
+    private int intendedZoomStep, currentZoomStep;
+    private double zoom = 1.;
     private Timer cancelDraftTimer;
     private boolean useDraft = true, intendedDraft = false, currentDraft;
 
@@ -305,6 +306,8 @@ class OpenGlRpl implements GLEventListener,
 
     public void display(GLAutoDrawable drawable) {
 	GL gl = drawable.getGL();
+        if (intendedZoomStep != currentZoomStep)
+            setupViewport(gl, cmp.getWidth(), cmp.getHeight());
         if (currentDraft != intendedDraft)
             draftQuality(gl, intendedDraft);
 	gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -325,6 +328,11 @@ class OpenGlRpl implements GLEventListener,
     public void reshape(GLAutoDrawable drawable,
                         int x, int y, int width, int height) {
 	GL gl = drawable.getGL();
+        setupViewport(gl, width, height);
+        triggerDraft();
+    }
+
+    private void setupViewport(GL gl, int width, int height) {
 	gl.glMatrixMode(GL_PROJECTION);
 	gl.glLoadIdentity();
         double w, h;
@@ -339,6 +347,11 @@ class OpenGlRpl implements GLEventListener,
             h = 1;
             pixelSize = 2.f/height;
         }
+        currentZoomStep = intendedZoomStep;
+        zoom = Math.pow(0.9, currentZoomStep);
+        w *= zoom;
+        h *= zoom;
+        pixelSize *= zoom;
 	gl.glOrtho(-w, w, -h, h, 0., 1.);
 
         float[] aaOffsets = new float[9*3];
@@ -352,8 +365,6 @@ class OpenGlRpl implements GLEventListener,
             }
         }
         gl.glUniform3fv(uniLoc(gl, "aaOffsets"), 9, aaOffsets, 0);
-	gl.glUniform1i(uniLoc(gl, "numAaOffsets"), currentDraft ? 1 : 9);
-        triggerDraft();
     }
 
     public void displayChanged(GLAutoDrawable drawable,
@@ -405,8 +416,10 @@ class OpenGlRpl implements GLEventListener,
     }
 
     public void mouseWheelMoved(MouseWheelEvent evnt) {
-        zoomStep = Math.max(zoomStep + evnt.getWheelRotation(), 0);
-        triggerDraft();
+        intendedZoomStep = intendedZoomStep + evnt.getWheelRotation();
+        if (intendedZoomStep < 0) intendedZoomStep = 0;
+        if (intendedZoomStep > 100) intendedZoomStep = 100;
+        if (intendedZoomStep != currentZoomStep) triggerDraft();
     }
 
 }
