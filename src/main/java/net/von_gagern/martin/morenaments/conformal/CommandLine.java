@@ -306,11 +306,8 @@ public class CommandLine {
             Group g = Group.fromImageComment(comment);
             JFrame frm = new JFrame("OpenGlRpl");
             GLCapabilities capa = new GLCapabilities();
-            //capa.setSampleBuffers(true);
-            GLCanvas glad = new GLCanvas(capa);
             OpenGlRpl ogrpl = new OpenGlRpl(img, g);
-            glad.addGLEventListener(ogrpl);
-            frm.getContentPane().add((Component)glad);
+            frm.getContentPane().add(ogrpl.getComponent());
             frm.setSize(500, 500);
             frm.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frm.setVisible(true);

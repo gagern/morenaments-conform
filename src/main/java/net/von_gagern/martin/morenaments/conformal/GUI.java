@@ -41,7 +41,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 
-import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCanvas;
 import javax.media.opengl.GLCapabilities;
 import org.apache.log4j.Logger;
@@ -377,11 +376,8 @@ public class GUI extends JDesktopPane {
         BufferedImage img = currentImageDisplay.getImage();
 	JFrame frm = new JFrame("OpenGlRpl");
 	GLCapabilities capa = new GLCapabilities();
-	//capa.setSampleBuffers(true);
-	GLAutoDrawable glad = new GLCanvas(capa);
         OpenGlRpl ogrpl = new OpenGlRpl(img, g);
-	glad.addGLEventListener(ogrpl);
-	frm.getContentPane().add((Component)glad);
+	frm.getContentPane().add(ogrpl.getComponent());
 	frm.setSize(500, 500);
 	frm.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	frm.setVisible(true);
