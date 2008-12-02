@@ -55,7 +55,7 @@ class OpenGlRpl implements GLEventListener {
     private float[] background = { grayLevel, grayLevel, grayLevel, 1.0f };
     private int maxTextureSize;
     private static final HypTrafo flipReal =
-        new HypTrafo(new Vec2C(0., 0., 1., 0.), true);
+        new HypTrafo(new Vec2C(0., 0., 0., 1.), true);
 
     public OpenGlRpl(BufferedImage img, Group g) {
         this.tile = img;
@@ -254,23 +254,18 @@ class OpenGlRpl implements GLEventListener {
         final int n = gens.length;
         assert incs.length == n;
         float[] ic = new float[n<<2], gm = new float[n<<2], gp = new float[n];
-        float[] ip = new float[n];
         for (int i = 0; i < n; ++i) {
             HypTrafo inc = incs[i], gen = gens[i];
             gen = gen.getInverse();
-            /*
             if (inc.doConj)
                 inc = flipReal.clone().concatenate(inc);
             assert !inc.doConj;
-            */
             vec4ForHypTrafo(inc, ic, i<<2);
             vec4ForHypTrafo(gen, gm, i<<2);
             gp[i] = gen.doConj ? -1.f : 1.f;
-            ip[i] = inc.doConj ? -1.f : 1.f;
         }
 	gl.glUniform1i(uniLoc(gl, "numGenerators"), n);
         gl.glUniform4fv(uniLoc(gl, "insidenessChecks"), n, ic, 0);
-        gl.glUniform1fv(uniLoc(gl, "insidenessCheckParity"), n, ip, 0);
 	gl.glUniform4fv(uniLoc(gl, "genMatrix"), n, gm, 0);        
         gl.glUniform1fv(uniLoc(gl, "genParity"), n, gp, 0);
     }
