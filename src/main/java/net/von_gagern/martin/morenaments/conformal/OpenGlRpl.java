@@ -72,13 +72,16 @@ class OpenGlRpl implements GLEventListener,
     private static final HypTrafo flipReal =
         new HypTrafo(new Vec2C(0., 0., 0., 1.), true);
     private int intendedZoomStep, currentZoomStep;
-    private double pixelSize;
+    private double pixelSize = 1.;
     private Timer cancelDraftTimer;
     private boolean useDraft = false, intendedDraft = false, currentDraft;
     private Point panStartPos;
     private boolean updateViewport;
     private Point2D.Double lastCenter = new Point2D.Double();
     private Point2D.Double center = new Point2D.Double();
+    private HypTrafo currentInitialTrafo = new HypTrafo();
+    private HypTrafo intendedInitialTrafo = null, beginDragPoint = null;
+    private Double rotationStartAngle = null;
 
     public OpenGlRpl(BufferedImage img, Group g) {
         this.tile = img;
@@ -120,7 +123,7 @@ class OpenGlRpl implements GLEventListener,
                 ("At least one texture unit required");
         gl.glGetIntegerv(GL_MAX_TEXTURE_SIZE, intBuf, 0);
         maxTextureSize = intBuf[0];
-        logger.debug("max texture size: " + maxTextureSize);
+        logger.info("max texture size: " + maxTextureSize);
     }
 
     private void initDefaults(GL gl) {
@@ -276,16 +279,30 @@ class OpenGlRpl implements GLEventListener,
 	gl.glUseProgram(shaderProgram);
 	gl.glUniform1i(uniLoc(gl, "texSampler"), 0);
         gl.glUniform4fv(uniLoc(gl, "bgColor"), 1, background, 0);
-        gl.glUniform4f(uniLoc(gl, "initialTrafo"), 0.f, 0.f, 1.f, 0.f);
         draftQuality(gl, currentDraft);
+        initialTrafo(gl, currentInitialTrafo);
         initGroup(gl);
     }
 
+    private static final double detTolerance = 1e-6;
+
     private void vec4ForHypTrafo(HypTrafo tr, float[] v, int i) {
-        v[i++] = (float)tr.vec.x.r;
-        v[i++] = (float)tr.vec.x.i;
-        v[i++] = (float)tr.vec.y.r;
-        v[i++] = (float)tr.vec.y.i;
+        double det = tr.vec.y.absSq() - tr.vec.x.absSq(), factor;
+        if (Math.abs(det - 1.) > detTolerance)
+            factor = Math.sqrt(1./det);
+        else
+            factor = 1.0;
+        v[i++] = (float)(tr.vec.x.r*factor);
+        v[i++] = (float)(tr.vec.x.i*factor);
+        v[i++] = (float)(tr.vec.y.r*factor);
+        v[i++] = (float)(tr.vec.y.i*factor);
+    }
+
+    private void initialTrafo(GL gl, HypTrafo initialTrafo) {
+        currentInitialTrafo = initialTrafo;
+        float[] it = new float[4];
+        vec4ForHypTrafo(initialTrafo, it, 0);
+        gl.glUniform4fv(uniLoc(gl, "initialTrafo"), 1, it, 0);
     }
 
     private void initGroup(GL gl) {
@@ -316,6 +333,10 @@ class OpenGlRpl implements GLEventListener,
             setupViewport(gl, cmp.getWidth(), cmp.getHeight());
         if (currentDraft != intendedDraft)
             draftQuality(gl, intendedDraft);
+        if (intendedInitialTrafo != null) {
+            initialTrafo(gl, intendedInitialTrafo);
+            intendedInitialTrafo = null;
+        }
 	gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	gl.glEnable(GL_TEXTURE_2D);
 
@@ -409,19 +430,53 @@ class OpenGlRpl implements GLEventListener,
         currentDraft = draft;
     }
 
+    private Point2D.Double windowToDisc(Point in) {
+        double x = (in.x + 0.5 - cmp.getWidth ()/2.)*pixelSize + center.x;
+        double y = (in.y + 0.5 - cmp.getHeight()/2.)*pixelSize + center.y;
+        return new Point2D.Double(x, y);
+    }
+
+    private HypTrafo translation(Point2D d) {
+        HypTrafo tr = new HypTrafo(new Vec2C(d.getX(), d.getY(), 1, 0), false);
+        tr.normalize();
+        return tr;
+    }
+
     public void mouseEntered(MouseEvent evnt) {
     }
 
     public void mouseExited(MouseEvent evnt) {
     }
 
+    private static final double inRadius2 = 0.8*0.8;
+
     public void mousePressed(MouseEvent evnt) {
-        panStartPos = evnt.getPoint();
-        lastCenter.setLocation(center);
+        if (panStartPos != null || beginDragPoint != null)
+            return;
+        if (evnt.getButton() == MouseEvent.BUTTON3 ||
+            (evnt.getButton() == MouseEvent.BUTTON1 &&
+             (evnt.getModifiersEx() & MouseEvent.ALT_DOWN_MASK) != 0)) {
+            Point2D.Double pos = windowToDisc(evnt.getPoint());
+            double r2 = pos.x*pos.x + pos.y*pos.y;
+            if (r2 < inRadius2) {
+                beginDragPoint = translation(pos);
+                beginDragPoint.preConcatenate(currentInitialTrafo);
+            }
+            else {
+                beginDragPoint = currentInitialTrafo;
+                rotationStartAngle = Math.atan2(pos.y, pos.x);
+            }
+        }
+        else if (evnt.getButton() == MouseEvent.BUTTON1) {
+            panStartPos = evnt.getPoint();
+            lastCenter.setLocation(center);
+        }
     }
 
     public void mouseReleased(MouseEvent evnt) {
         panStartPos = null;
+        beginDragPoint = null;
+        rotationStartAngle = null;
     }
 
     public void mouseClicked(MouseEvent evnt) {
@@ -436,6 +491,19 @@ class OpenGlRpl implements GLEventListener,
             double dy = (evnt.getY() - panStartPos.y)*pixelSize;
             center.setLocation(lastCenter.x - dx, lastCenter.y - dy);
             updateViewport = true;
+            triggerDraft();
+        }
+        if (beginDragPoint != null) {
+            Point2D.Double pos = windowToDisc(evnt.getPoint());
+            if (rotationStartAngle == null) {
+                intendedInitialTrafo = translation(pos);
+                intendedInitialTrafo.invert();
+            }
+            else {
+                double a = rotationStartAngle - Math.atan2(pos.y, pos.x);
+                intendedInitialTrafo = HypTrafo.getRotation(a);
+            }
+            intendedInitialTrafo.preConcatenate(beginDragPoint);
             triggerDraft();
         }
     }
