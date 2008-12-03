@@ -35,6 +35,8 @@ import java.nio.charset.CodingErrorAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.media.opengl.DebugGL;
 import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
@@ -115,16 +117,60 @@ class OpenGlRpl implements GLEventListener,
         initShader(gl);
     }
 
+    private boolean hasVersion(String str, int... required) {
+        Matcher m = Pattern.compile("[0-9]+(\\.[0-9]+)").matcher(str);
+        if (!m.find()) return false;
+        String[] s = m.group().split("\\.");
+        int n = s.length;
+        int[] v = new int[n];
+        for (int i = 0; i < n; ++i)
+            v[i] = Integer.parseInt(s[i]);
+        for (int i = 0; i < required.length; ++i) {
+            int vi;
+            if (i < n) vi = v[i];
+            else vi = 0;
+            logger.debug("Comparing component " + i + " of " + str + ": " +
+                         vi + " < " + required[i] + "?");
+            if (vi < required[i])
+                return false;
+            if (vi > required[i])
+                return true;
+        }
+        return true;
+    }
+
+    private void requireVersion(String str, int... required) {
+        if (!hasVersion(str, required))
+            throw new RuntimeException("Insufficient version " + str);
+    }
+
     private void checkParams(GL gl) {
+        int haveShader = 0;
         String vendor = gl.glGetString(GL_VENDOR);
-        String renderer = gl.glGetString(GL_RENDERER);
-        String version = gl.glGetString(GL_VERSION);
-        String slVersion = gl.glGetString(GL_SHADING_LANGUAGE_VERSION);
-        String extensions = gl.glGetString(GL_EXTENSIONS);
         logger.info("OpenGL vendor: " + vendor);
+        String renderer = gl.glGetString(GL_RENDERER);
         logger.info("OpenGL renderer: " + renderer);
+        String version = gl.glGetString(GL_VERSION);
         logger.info("OpenGL version: " + version);
-        logger.info("GLSL version: " + slVersion);
+        requireVersion(version, 1, 5);
+        String extensions = gl.glGetString(GL_EXTENSIONS);
+        if ((" " + extensions + " ").indexOf(" GL_ARB_shading_language_100 ")
+            >= 0) {
+            logger.info("GL_ARB_shading_language_100 extension found");
+            haveShader = 100;
+        }
+        try {
+            String slVersion = gl.glGetString(GL_SHADING_LANGUAGE_VERSION);
+            logger.info("GLSL version: " + slVersion);
+            if (haveShader == 0) {
+                requireVersion(slVersion, 1);
+                haveShader = 100;
+            }
+        }
+        catch (RuntimeException e) {
+            if (haveShader == 0) throw e;
+            // otherwise version 1.00 is good enough, ignore errors
+        }
         int[] intBuf = new int[1];
         gl.glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, intBuf, 0);
         if (intBuf[0] < 1)
