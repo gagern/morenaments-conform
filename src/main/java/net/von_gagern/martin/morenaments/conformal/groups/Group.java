@@ -89,7 +89,7 @@ public abstract class Group implements Cloneable {
         try {
             Group that = (Group)super.clone();
             if (hyperbolicAngles != null)
-                that.setHyperbolicAngles((int[])hyperbolicAngles.clone());
+                that.setHyperbolicAngles(hyperbolicAngles.clone());
             return that;
         }
         catch (CloneNotSupportedException e) {

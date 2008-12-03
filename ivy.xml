@@ -1,0 +1,29 @@
+<ivy-module version="2.0">
+
+  <info organisation="net.von-gagern.martin.morenaments"
+	module="conformal"/>
+
+  <configurations>
+    <conf name="default"/>
+    <conf name="test" visibility="private"/>
+  </configurations>
+
+  <dependencies defaultconf="default->default">
+    <dependency org="net.von-gagern.martin.morenaments" name="hyp"
+		rev="0.4-SNAPSHOT" changing="true" />
+    <dependency org="net.von-gagern.martin.morenaments" name="euc"
+		rev="1.6-SNAPSHOT" changing="true" />
+    <dependency org="net.von-gagern.martin" name="confoo"
+		rev="1.1-SNAPSHOT" changing="true" />
+    <dependency org="net.von-gagern.martin" name="getopt"
+		rev="1.0-SNAPSHOT" changing="true" />
+    <dependency org="stax" name="stax" rev="1.2.0" />
+    <dependency org="junit" name="junit" rev="4.4" conf="test->default" />
+    <dependency org="log4j" name="log4j" rev="1.2.15" transitive="false" />
+    <exclude org="javax.mail" module="mail"/>
+    <exclude org="javax.jms" module="jms"/>
+    <exclude org="com.sun.jdmk" module="jmxtools"/>
+    <exclude org="com.sun.jmx" module="jmxri"/>
+  </dependencies>
+
+</ivy-module>

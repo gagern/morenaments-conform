@@ -41,6 +41,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 
+import javax.media.opengl.GLCanvas;
+import javax.media.opengl.GLCapabilities;
 import org.apache.log4j.Logger;
 
 import de.tum.in.gagern.hornamente.BusyFeedback;
@@ -72,7 +74,7 @@ public class GUI extends JDesktopPane {
         busy = new BusyFeedback(this);
         setPreferredSize(new Dimension(600, 600));
         currentDir = new File(".");
-        size = cl.getSize(800);
+        size = cl.getSize(1024);
         JMenuBar menuBar = createMenuBar();
         if (frame != null) {
             frame.setJMenuBar(menuBar);
@@ -126,6 +128,13 @@ public class GUI extends JDesktopPane {
         menu.add(new JMenuItem(aal(new AbstractAction("Extract Tile") {
                 public void actionPerformed(ActionEvent e) {
                     tileExtract();
+                }}, imageActions)));
+
+        menu = new JMenu("View");
+        bar.add(menu);
+        menu.add(new JMenuItem(aal(new AbstractAction("OpenGL RPL") {
+                public void actionPerformed(ActionEvent e) {
+                    openGlRpl();
                 }}, imageActions)));
 
         for (Action a: imageActions)
@@ -313,7 +322,7 @@ public class GUI extends JDesktopPane {
         }
     }
 
-    private void hypTile() {
+    private Group queryGroup(boolean newAngles) {
         Group g = currentImageDisplay.getGroup();
         if (g == null) {
             Group.EuclideanGroup eg = (Group.EuclideanGroup)
@@ -322,64 +331,56 @@ public class GUI extends JDesktopPane {
                     "Select Group",
                     JOptionPane.QUESTION_MESSAGE, null,
                     Group.EuclideanGroup.values(), null);
-            if (eg == null) return;
+            if (eg == null) return null;
             g = Group.getInstance(eg);
+            newAngles = true;
         }
-        else {
+        else if (newAngles) {
             g = g.clone();
         }
-        AngleCountsDlg acdlg = new AngleCountsDlg(this);
-        acdlg.setGroup(g);
-        if (!acdlg.showModal()) return;
-        g.setHyperbolicAngles(acdlg.getAngles());
+        if (newAngles) {
+            AngleCountsDlg acdlg = new AngleCountsDlg(this);
+            acdlg.setGroup(g);
+            if (!acdlg.showModal()) return null;
+            g.setHyperbolicAngles(acdlg.getAngles());
+        }
+        return g;
+    }
+
+    private void hypTile() {
+        Group g = queryGroup(true);
+        if (g == null) return;
         String newTitle = "HypTile of " + currentImageDisplay.getTitle();
         BufferedImage img = currentImageDisplay.getImage();
         start(new HypTileTask(img, g, size, newTitle));
     }
 
     private void tiling() {
-        Group g = currentImageDisplay.getGroup();
-        if (g == null) {
-            Group.EuclideanGroup eg = (Group.EuclideanGroup)
-                JOptionPane.showInputDialog(this,
-                    "Select euclidean group",
-                    "Select Group",
-                    JOptionPane.QUESTION_MESSAGE, null,
-                    Group.EuclideanGroup.values(), null);
-            if (eg == null) return;
-            g = Group.getInstance(eg);
-            AngleCountsDlg acdlg = new AngleCountsDlg(this);
-            acdlg.setGroup(g);
-            if (!acdlg.showModal()) return;
-            g.setHyperbolicAngles(acdlg.getAngles());
-        }
+        Group g = queryGroup(false);
+        if (g == null) return;
         String newTitle = "Tiling of " + currentImageDisplay.getTitle();
         BufferedImage img = currentImageDisplay.getImage();
         start(new TilingTask(img, g, size, newTitle));
     }
 
     private void tileExtract() {
-        Group g = currentImageDisplay.getGroup();
-        if (g == null) {
-            Group.EuclideanGroup eg = (Group.EuclideanGroup)
-                JOptionPane.showInputDialog(this,
-                    "Select euclidean group",
-                    "Select Group",
-                    JOptionPane.QUESTION_MESSAGE, null,
-                    Group.EuclideanGroup.values(), null);
-            if (eg == null) return;
-            g = Group.getInstance(eg);
-        }
-        else {
-            g = g.clone();
-        }
-        AngleCountsDlg acdlg = new AngleCountsDlg(this);
-        acdlg.setGroup(g);
-        if (!acdlg.showModal()) return;
-        g.setHyperbolicAngles(acdlg.getAngles());
+        Group g = queryGroup(false);
+        if (g == null) return;
         String newTitle = "HypTile of " + currentImageDisplay.getTitle();
         BufferedImage img = currentImageDisplay.getImage();
         start(new TileExtractTask(img, g, size, newTitle));
+    }
+
+    private void openGlRpl() {
+        Group g = queryGroup(false);
+        BufferedImage img = currentImageDisplay.getImage();
+	JFrame frm = new JFrame("OpenGlRpl");
+	GLCapabilities capa = new GLCapabilities();
+        OpenGlRpl ogrpl = new OpenGlRpl(img, g);
+	frm.getContentPane().add(ogrpl.getComponent());
+	frm.setSize(500, 500);
+	frm.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	frm.setVisible(true);
     }
 
     public int getImageSize() {

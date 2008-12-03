@@ -1,13 +1,23 @@
 package net.von_gagern.martin.morenaments.conformal;
 
+import java.awt.Component;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.stream.FileImageInputStream;
+import javax.imageio.stream.ImageInputStream;
+import javax.media.opengl.GLCanvas;
+import javax.media.opengl.GLCapabilities;
 import javax.swing.JFrame;
+import javax.xml.xpath.XPathFactory;
+import org.w3c.dom.Node;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -39,6 +49,8 @@ public class CommandLine {
 
     private List<Job> jobs;
 
+    private boolean terminateAfterJobs = true;
+
     public CommandLine(String[] args) throws OptException {
         jobs = new ArrayList<Job>();
         OptParser<CommandLineOption> parser =
@@ -58,6 +70,7 @@ public class CommandLine {
                 group(pair);
                 break;
             case tile:
+            case opengl:
                 action = key;
                 break;
             case debug:
@@ -85,6 +98,10 @@ public class CommandLine {
         case tile:
             tileArg(arg);
             break;
+        case opengl:
+            openglArg(arg);
+            terminateAfterJobs = false;
+            break;
         default:
             throw new IllegalStateException("Unexpected action");
         }
@@ -94,6 +111,10 @@ public class CommandLine {
         if (group == null)
             throw new OptException("Group required first", arg);
         jobs.add(new TileJob(arg));
+    }
+
+    private void openglArg(String arg) throws OptException {
+        jobs.add(new OpenglJob(arg));
     }
 
     private void size(OptPair<CommandLineOption> pair) throws OptException {
@@ -165,7 +186,7 @@ public class CommandLine {
     }
 
     public void run() {
-        if (jobs.isEmpty()) runGUI();
+        if (action == null && jobs.isEmpty()) runGUI();
         else runJobs();
     }
 
@@ -180,7 +201,8 @@ public class CommandLine {
                 errors = 1;
             }
         }
-        System.exit(errors);
+        if (terminateAfterJobs)
+            System.exit(errors);
     }
 
     public void runGUI() {
@@ -235,6 +257,60 @@ public class CommandLine {
                 ext = "png";
             }
             ImageIO.write(outImg, ext, file);
+        }
+
+    }
+
+    private class OpenglJob implements Job {
+
+        private Integer size = CommandLine.this.size;
+        private Group group = CommandLine.this.group;
+        private File file;
+
+        public OpenglJob(String arg) {
+            file = new File(arg);
+        }
+
+        private final String STD_METADATA_FORMAT = "javax_imageio_1.0";
+
+        private String getComment(IIOMetadata meta) {
+            final String XPATH;
+            XPATH = "Text/TextEntry[@keyword='Comment']/@value";
+            try {
+                if (meta == null) return null;
+                Node node = meta.getAsTree(STD_METADATA_FORMAT);
+                if (node == null) return null;
+                return XPathFactory.newInstance().newXPath().evaluate(XPATH, node);
+            }
+            catch (Exception e) {
+                return null;
+            }
+        }
+
+        public void run() throws Exception {
+            ImageInputStream stream = new FileImageInputStream(file);
+            Iterator<ImageReader> iri = ImageIO.getImageReaders(stream);
+            if (!iri.hasNext())
+                throw new IOException("Unsupported format: " + file.getName());
+            ImageReader reader = iri.next();
+            reader.setInput(stream);
+            String comment;
+            BufferedImage img;
+            try {
+                comment = getComment(reader.getImageMetadata(0));
+                img = reader.read(0);
+            }
+            catch (IndexOutOfBoundsException e) {
+                throw new IOException("File contains no images", e);
+            }
+            Group g = Group.fromImageComment(comment);
+            JFrame frm = new JFrame("OpenGlRpl");
+            GLCapabilities capa = new GLCapabilities();
+            OpenGlRpl ogrpl = new OpenGlRpl(img, g);
+            frm.getContentPane().add(ogrpl.getComponent());
+            frm.setSize(500, 500);
+            frm.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frm.setVisible(true);
         }
 
     }

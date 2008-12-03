@@ -1,0 +1,32 @@
+<ivysettings>
+  <settings defaultResolver="default"/>
+  <include url="${ivy.default.settings.dir}/ivysettings-public.xml"/>
+  <include url="${ivy.default.settings.dir}/ivysettings-shared.xml"/>
+  <include url="${ivy.default.settings.dir}/ivysettings-local.xml"/>
+  <include url="${ivy.default.settings.dir}/ivysettings-main-chain.xml"/>
+  <include url="${ivy.default.settings.dir}/ivysettings-default-chain.xml"/>
+
+  <property name="maven.repo.local" value="${user.home}/.m2/repository" override="false"/>
+  <property name="maven.pattern.ivy" value="[organisation]/[module]/[revision]/[module]-[revision].pom" override="false"/>
+  <property name="maven.pattern.artifact" value="[organisation]/[module]/[revision]/[artifact]-[revision].[ext]" override="false"/>
+  <resolvers>
+    <filesystem name="local-m2" m2compatible="true">
+      <ivy pattern="${maven.repo.local}/${maven.pattern.ivy}"/>
+      <artifact pattern="${maven.repo.local}/${maven.pattern.artifact}"/>
+    </filesystem>
+    <url name="mvg-m2" m2compatible="true">
+      <ivy pattern="http://martin.von-gagern.net/m2repo/${maven.pattern.ivy}"/>
+      <artifact pattern="http://martin.von-gagern.net/m2repo/${maven.pattern.artifact}"/>
+    </url>
+    <chain name="mvg" returnFirst="true">
+      <resolver ref="local-m2"/>
+      <resolver ref="mvg-m2"/>
+    </chain>
+  </resolvers>
+
+  <modules>
+    <module organisation="net.von-gagern.martin*" matcher="glob" resolver="mvg" />
+    <module organisation="de.berlios.ressim" module="mtj" matcher="exact" resolver="mvg" />
+  </modules>
+
+</ivysettings>
