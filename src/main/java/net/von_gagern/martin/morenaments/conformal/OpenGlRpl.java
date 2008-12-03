@@ -505,6 +505,7 @@ class OpenGlRpl implements GLEventListener,
         if (beginDragPoint != null) {
             Point2D.Double pos = windowToDisc(evnt.getPoint());
             if (rotationStartAngle == null) {
+                if (pos.x*pos.x + pos.y*pos.y > .999) return;
                 intendedInitialTrafo = translation(pos);
                 intendedInitialTrafo.invert();
             }
