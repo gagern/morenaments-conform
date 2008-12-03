@@ -116,6 +116,15 @@ class OpenGlRpl implements GLEventListener,
     }
 
     private void checkParams(GL gl) {
+        String vendor = gl.glGetString(GL_VENDOR);
+        String renderer = gl.glGetString(GL_RENDERER);
+        String version = gl.glGetString(GL_VERSION);
+        String slVersion = gl.glGetString(GL_SHADING_LANGUAGE_VERSION);
+        String extensions = gl.glGetString(GL_EXTENSIONS);
+        logger.info("OpenGL vendor: " + vendor);
+        logger.info("OpenGL renderer: " + renderer);
+        logger.info("OpenGL version: " + version);
+        logger.info("GLSL version: " + slVersion);
         int[] intBuf = new int[1];
         gl.glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, intBuf, 0);
         if (intBuf[0] < 1)
