@@ -42,6 +42,7 @@ import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCanvas;
 import javax.media.opengl.GLEventListener;
+import javax.media.opengl.GLException;
 import javax.swing.Timer;
 import javax.swing.event.MouseInputListener;
 
@@ -67,6 +68,7 @@ class OpenGlRpl implements GLEventListener,
     private static Map<String, String> sources = new HashMap<String, String>();
     private Map<String, Integer> uniLocCache = new HashMap<String, Integer>();
     private int texName;
+    private boolean arbShader;
     private int shaderProgram;
     private static final float grayLevel = 12.f/15.f;
     private float[] background = { grayLevel, grayLevel, grayLevel, 1.0f };
@@ -107,6 +109,11 @@ class OpenGlRpl implements GLEventListener,
         return cmp;
     }
 
+    private ShaderInterface getShaderInterface(GL gl) {
+        if (arbShader) return new ArbExtensionShaderInterface(gl);
+        else return new OpenGlShaderInterface(gl);
+    }
+
     public void init(GLAutoDrawable drawable) {
         if (debug)
             drawable.setGL(new DebugGL(drawable.getGL()));
@@ -114,7 +121,8 @@ class OpenGlRpl implements GLEventListener,
         checkParams(gl);
         initDefaults(gl);
         initTexture(gl);
-        initShader(gl);
+        ShaderInterface si = getShaderInterface(gl);
+        initShader(si);
     }
 
     private boolean hasVersion(String str, int... required) {
@@ -141,36 +149,56 @@ class OpenGlRpl implements GLEventListener,
 
     private void requireVersion(String str, int... required) {
         if (!hasVersion(str, required))
-            throw new RuntimeException("Insufficient version " + str);
+            throw new GLException("Insufficient version " + str);
     }
 
-    private void checkParams(GL gl) {
-        int haveShader = 0;
+    private boolean useArbShader(GL gl) {
         String vendor = gl.glGetString(GL_VENDOR);
         logger.info("OpenGL vendor: " + vendor);
         String renderer = gl.glGetString(GL_RENDERER);
         logger.info("OpenGL renderer: " + renderer);
         String version = gl.glGetString(GL_VERSION);
         logger.info("OpenGL version: " + version);
-        requireVersion(version, 1, 5);
-        String extensions = gl.glGetString(GL_EXTENSIONS);
-        if ((" " + extensions + " ").indexOf(" GL_ARB_shading_language_100 ")
-            >= 0) {
-            logger.info("GL_ARB_shading_language_100 extension found");
-            haveShader = 100;
-        }
-        try {
-            String slVersion = gl.glGetString(GL_SHADING_LANGUAGE_VERSION);
-            logger.info("GLSL version: " + slVersion);
-            if (haveShader == 0) {
-                requireVersion(slVersion, 1);
-                haveShader = 100;
+        boolean gl21 = gl.isExtensionAvailable("GL_VERSION_2_1");
+        boolean fs = gl.isExtensionAvailable("GL_ARB_fragment_shader");
+        boolean sl1 = gl.isExtensionAvailable("GL_ARB_shading_language_100");
+        if (gl21) {
+            logger.debug("OpenGL >= 2.1 detected");
+            String slVersion;
+            try {
+                slVersion = gl.glGetString(GL_SHADING_LANGUAGE_VERSION);
+            }
+            catch (GLException e) {
+                slVersion = null;
+            }
+            if (slVersion == null) {
+                logger.error("Could not query shading language version");
+            }
+            else {
+                logger.info("GLSL version: " + slVersion);
+                if (hasVersion(slVersion, 1)) {
+                    logger.debug("OpenGL 2.1 fragment shader detected");
+                    return false;
+                }
             }
         }
-        catch (RuntimeException e) {
-            if (haveShader == 0) throw e;
-            // otherwise version 1.00 is good enough, ignore errors
+        if (fs && sl1) {
+            logger.debug("Fragment shader extension detected");
+            return true;
         }
+        if (fs)
+            logger.error("Extension GL_ARB_shading_language_100 missing");
+        else if (sl1)
+            logger.error("Extension GL_ARB_fragment_shader missing");
+        else
+            logger.error("No usable fragment shader detected");
+        throw new GLException("OpenGL 2.1 or the GL_ARB_fragment_shader " +
+                              "and GL_ARB_shading_language_100 extensions " +
+                              "are required");
+    }
+
+    private void checkParams(GL gl) {
+        arbShader = useArbShader(gl);
         int[] intBuf = new int[1];
         gl.glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, intBuf, 0);
         if (intBuf[0] < 1)
@@ -265,20 +293,19 @@ class OpenGlRpl implements GLEventListener,
         return src;
     }
 
-    private void initShader(GL gl) {
+    private void initShader(ShaderInterface si) {
         String[] fSrc = { "fsRpl.gls" };
         for (int i = 0; i < fSrc.length; ++i)
             fSrc[i] = getSource(fSrc[i]);
 	int[] intBuf = new int[1];
-	int shader = gl.glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
-	gl.glShaderSourceARB(shader, fSrc.length, fSrc, null);
-	gl.glCompileShaderARB(shader);
+	int shader = si.createFragmentShader();
+        si.shaderSource(shader, fSrc.length, fSrc);
+        si.compileShader(shader);
 
 	// get log message
-	gl.glGetObjectParameterivARB(shader, GL_OBJECT_INFO_LOG_LENGTH_ARB, intBuf, 0);
-	byte[] logBytes = new byte[intBuf[0] + 1];
-	gl.glGetInfoLogARB(shader, logBytes.length,
-			      intBuf, 0, logBytes, 0);
+        int logLength = si.getShaderInfoLogLength(shader);
+	byte[] logBytes = new byte[logLength + 1];
+	si.getShaderInfoLog(shader, logBytes.length, intBuf, 0, logBytes, 0);
 	if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
 	String log = new String(logBytes, 0, intBuf[0]);
 	if (!"".equals(log)) {
@@ -287,21 +314,21 @@ class OpenGlRpl implements GLEventListener,
 	}
 	
 	// check compilation status
-	gl.glGetObjectParameterivARB(shader, GL_OBJECT_COMPILE_STATUS_ARB, intBuf, 0);
-	if (intBuf[0] != GL_TRUE)
-	    throw new RuntimeException("Error compiling GLS");
+        int status = si.getShaderCompileStatus(shader);
+	if (status != GL_TRUE)
+	    throw new RuntimeException("Error compiling shader");
 
 	// link program
-	shaderProgram = gl.glCreateProgramObjectARB();
-	gl.glAttachObjectARB(shaderProgram, shader);
+	shaderProgram = si.createProgram();
+	si.attachShader(shaderProgram, shader);
 
         uniLocCache.clear();
-	gl.glLinkProgramARB(shaderProgram);
+        si.linkProgram(shaderProgram);
 	// get log message
-	gl.glGetObjectParameterivARB(shaderProgram, GL_OBJECT_INFO_LOG_LENGTH_ARB, intBuf, 0);
-	logBytes = new byte[intBuf[0] + 1];
-	gl.glGetInfoLogARB(shaderProgram, logBytes.length,
-			       intBuf, 0, logBytes, 0);
+        logLength = si.getProgramInfoLogLength(shaderProgram);
+	logBytes = new byte[logLength + 1];
+        si.getProgramInfoLog(shaderProgram, logBytes.length,
+                             intBuf, 0, logBytes, 0);
 	if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
 	log = new String(logBytes, 0, intBuf[0]);
 	if (!"".equals(log)) {
@@ -309,21 +336,18 @@ class OpenGlRpl implements GLEventListener,
             logger.info(log);
 	}
 
+	if (si.getLinkStatus(shaderProgram) != GL_TRUE)
+	    throw new RuntimeException("Error linking shader");
 
-	gl.glGetObjectParameterivARB(shaderProgram, GL_OBJECT_LINK_STATUS_ARB, intBuf, 0);
-	if (intBuf[0] != GL_TRUE)
-	    throw new RuntimeException("Error linking GLS");
-
-	gl.glValidateProgramARB(shaderProgram);
-	gl.glGetObjectParameterivARB(shaderProgram, GL_OBJECT_VALIDATE_STATUS_ARB, intBuf, 0);
-	if (intBuf[0] != GL_TRUE)
-	    throw new RuntimeException("Error validating GLS");
+        si.validateProgram(shaderProgram);
+	if (si.getValidateStatus(shaderProgram) != GL_TRUE)
+	    throw new RuntimeException("Error validating shader");
 
 	// get log message
-	gl.glGetObjectParameterivARB(shaderProgram, GL_OBJECT_INFO_LOG_LENGTH_ARB, intBuf, 0);
-	logBytes = new byte[intBuf[0] + 1];
-	gl.glGetInfoLogARB(shaderProgram, logBytes.length,
-			       intBuf, 0, logBytes, 0);
+        logLength = si.getProgramInfoLogLength(shaderProgram);
+	logBytes = new byte[logLength + 1];
+        si.getProgramInfoLog(shaderProgram, logBytes.length,
+                             intBuf, 0, logBytes, 0);
 	if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
 	log = new String(logBytes, 0, intBuf[0]);
 	if (!"".equals(log)) {
@@ -331,12 +355,12 @@ class OpenGlRpl implements GLEventListener,
             logger.info(log);
 	}
 
-	gl.glUseProgramObjectARB(shaderProgram);
-	gl.glUniform1iARB(uniLoc(gl, "texSampler"), 0);
-        gl.glUniform4fvARB(uniLoc(gl, "bgColor"), 1, background, 0);
-        draftQuality(gl, currentDraft);
-        initialTrafo(gl, currentInitialTrafo);
-        initGroup(gl);
+	si.useProgram(shaderProgram);
+	si.uniform1i(uniLoc(si, "texSampler"), 0);
+        si.uniform4fv(uniLoc(si, "bgColor"), 1, background, 0);
+        draftQuality(si, currentDraft);
+        initialTrafo(si, currentInitialTrafo);
+        initGroup(si);
     }
 
     private static final double detTolerance = 1e-6;
@@ -353,14 +377,14 @@ class OpenGlRpl implements GLEventListener,
         v[i++] = (float)(tr.vec.y.i*factor);
     }
 
-    private void initialTrafo(GL gl, HypTrafo initialTrafo) {
+    private void initialTrafo(ShaderInterface si, HypTrafo initialTrafo) {
         currentInitialTrafo = initialTrafo;
         float[] it = new float[4];
         vec4ForHypTrafo(initialTrafo, it, 0);
-        gl.glUniform4fvARB(uniLoc(gl, "initialTrafo"), 1, it, 0);
+        si.uniform4fv(uniLoc(si, "initialTrafo"), 1, it, 0);
     }
 
-    private void initGroup(GL gl) {
+    private void initGroup(ShaderInterface si) {
         HypTrafo[] gens = grp.getGenerators();
         HypTrafo[] incs = grp.getInsidenessChecks();
         final int n = gens.length;
@@ -376,20 +400,21 @@ class OpenGlRpl implements GLEventListener,
             vec4ForHypTrafo(gen, gm, i<<2);
             gp[i] = gen.doConj ? -1.f : 1.f;
         }
-	gl.glUniform1iARB(uniLoc(gl, "numGenerators"), n);
-        gl.glUniform4fvARB(uniLoc(gl, "insidenessChecks"), n, ic, 0);
-	gl.glUniform4fvARB(uniLoc(gl, "genMatrix"), n, gm, 0);        
-        gl.glUniform1fvARB(uniLoc(gl, "genParity"), n, gp, 0);
+	si.uniform1i(uniLoc(si, "numGenerators"), n);
+        si.uniform4fv(uniLoc(si, "insidenessChecks"), n, ic, 0);
+	si.uniform4fv(uniLoc(si, "genMatrix"), n, gm, 0);        
+        si.uniform1fv(uniLoc(si, "genParity"), n, gp, 0);
     }
 
     public void display(GLAutoDrawable drawable) {
 	GL gl = drawable.getGL();
+        ShaderInterface si = getShaderInterface(gl);
         if (updateViewport || intendedZoomStep != currentZoomStep)
-            setupViewport(gl, cmp.getWidth(), cmp.getHeight());
+            setupViewport(gl, si, cmp.getWidth(), cmp.getHeight());
         if (currentDraft != intendedDraft)
-            draftQuality(gl, intendedDraft);
+            draftQuality(si, intendedDraft);
         if (intendedInitialTrafo != null) {
-            initialTrafo(gl, intendedInitialTrafo);
+            initialTrafo(si, intendedInitialTrafo);
             intendedInitialTrafo = null;
         }
 	gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -411,7 +436,7 @@ class OpenGlRpl implements GLEventListener,
                         int x, int y, int width, int height) {
 	GL gl = drawable.getGL();
         useDraft = width*height > 512*512;
-        setupViewport(gl, width, height);
+        setupViewport(gl, getShaderInterface(gl), width, height);
         triggerDraft();
     }
 
@@ -419,7 +444,8 @@ class OpenGlRpl implements GLEventListener,
         return Math.min(max, Math.max(min, val));
     }
 
-    private void setupViewport(GL gl, int width, int height) {
+    private void setupViewport(GL gl, ShaderInterface si,
+                               int width, int height) {
 	gl.glMatrixMode(GL_PROJECTION);
 	gl.glLoadIdentity();
         double w, h;
@@ -455,7 +481,7 @@ class OpenGlRpl implements GLEventListener,
                 aaOffsets[i++] = 1.f;
             }
         }
-        gl.glUniform3fvARB(uniLoc(gl, "aaOffsets"), 9, aaOffsets, 0);
+        si.uniform3fv(uniLoc(si, "aaOffsets"), 9, aaOffsets, 0);
     }
 
     public void displayChanged(GLAutoDrawable drawable,
@@ -464,10 +490,10 @@ class OpenGlRpl implements GLEventListener,
 	GL gl = drawable.getGL();
     }
 
-    private int uniLoc(GL gl, String name) {
+    private int uniLoc(ShaderInterface si, String name) {
         Integer loc = uniLocCache.get(name);
         if (loc == null) {
-            loc = Integer.valueOf(gl.glGetUniformLocationARB(shaderProgram, name));
+            loc = Integer.valueOf(si.getUniformLocation(shaderProgram, name));
             uniLocCache.put(name, loc);
         }
         return loc.intValue();
@@ -479,9 +505,9 @@ class OpenGlRpl implements GLEventListener,
         cancelDraftTimer.restart();
     }
 
-    private void draftQuality(GL gl, boolean draft) {
-	gl.glUniform1iARB(uniLoc(gl, "numAaOffsets"), draft ? 1 : 9);
-	gl.glUniform1iARB(uniLoc(gl, "maxPathLength"), draft ? 12 : 50);
+    private void draftQuality(ShaderInterface si, boolean draft) {
+	si.uniform1i(uniLoc(si, "numAaOffsets"), draft ? 1 : 9);
+	si.uniform1i(uniLoc(si, "maxPathLength"), draft ? 12 : 50);
         currentDraft = draft;
     }
 
