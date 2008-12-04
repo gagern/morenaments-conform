@@ -270,14 +270,14 @@ class OpenGlRpl implements GLEventListener,
         for (int i = 0; i < fSrc.length; ++i)
             fSrc[i] = getSource(fSrc[i]);
 	int[] intBuf = new int[1];
-	int shader = gl.glCreateShader(GL_FRAGMENT_SHADER);
-	gl.glShaderSource(shader, fSrc.length, fSrc, null);
-	gl.glCompileShader(shader);
+	int shader = gl.glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+	gl.glShaderSourceARB(shader, fSrc.length, fSrc, null);
+	gl.glCompileShaderARB(shader);
 
 	// get log message
-	gl.glGetShaderiv(shader, GL_INFO_LOG_LENGTH, intBuf, 0);
+	gl.glGetObjectParameterivARB(shader, GL_OBJECT_INFO_LOG_LENGTH_ARB, intBuf, 0);
 	byte[] logBytes = new byte[intBuf[0] + 1];
-	gl.glGetShaderInfoLog(shader, logBytes.length,
+	gl.glGetInfoLogARB(shader, logBytes.length,
 			      intBuf, 0, logBytes, 0);
 	if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
 	String log = new String(logBytes, 0, intBuf[0]);
@@ -287,20 +287,20 @@ class OpenGlRpl implements GLEventListener,
 	}
 	
 	// check compilation status
-	gl.glGetShaderiv(shader, GL_COMPILE_STATUS, intBuf, 0);
+	gl.glGetObjectParameterivARB(shader, GL_OBJECT_COMPILE_STATUS_ARB, intBuf, 0);
 	if (intBuf[0] != GL_TRUE)
 	    throw new RuntimeException("Error compiling GLS");
 
 	// link program
-	shaderProgram = gl.glCreateProgram();
-	gl.glAttachShader(shaderProgram, shader);
+	shaderProgram = gl.glCreateProgramObjectARB();
+	gl.glAttachObjectARB(shaderProgram, shader);
 
         uniLocCache.clear();
-	gl.glLinkProgram(shaderProgram);
+	gl.glLinkProgramARB(shaderProgram);
 	// get log message
-	gl.glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, intBuf, 0);
+	gl.glGetObjectParameterivARB(shaderProgram, GL_OBJECT_INFO_LOG_LENGTH_ARB, intBuf, 0);
 	logBytes = new byte[intBuf[0] + 1];
-	gl.glGetProgramInfoLog(shaderProgram, logBytes.length,
+	gl.glGetInfoLogARB(shaderProgram, logBytes.length,
 			       intBuf, 0, logBytes, 0);
 	if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
 	log = new String(logBytes, 0, intBuf[0]);
@@ -310,19 +310,19 @@ class OpenGlRpl implements GLEventListener,
 	}
 
 
-	gl.glGetProgramiv(shaderProgram, GL_LINK_STATUS, intBuf, 0);
+	gl.glGetObjectParameterivARB(shaderProgram, GL_OBJECT_LINK_STATUS_ARB, intBuf, 0);
 	if (intBuf[0] != GL_TRUE)
 	    throw new RuntimeException("Error linking GLS");
 
-	gl.glValidateProgram(shaderProgram);
-	gl.glGetProgramiv(shaderProgram, GL_VALIDATE_STATUS, intBuf, 0);
+	gl.glValidateProgramARB(shaderProgram);
+	gl.glGetObjectParameterivARB(shaderProgram, GL_OBJECT_VALIDATE_STATUS_ARB, intBuf, 0);
 	if (intBuf[0] != GL_TRUE)
 	    throw new RuntimeException("Error validating GLS");
 
 	// get log message
-	gl.glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, intBuf, 0);
+	gl.glGetObjectParameterivARB(shaderProgram, GL_OBJECT_INFO_LOG_LENGTH_ARB, intBuf, 0);
 	logBytes = new byte[intBuf[0] + 1];
-	gl.glGetProgramInfoLog(shaderProgram, logBytes.length,
+	gl.glGetInfoLogARB(shaderProgram, logBytes.length,
 			       intBuf, 0, logBytes, 0);
 	if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
 	log = new String(logBytes, 0, intBuf[0]);
@@ -331,9 +331,9 @@ class OpenGlRpl implements GLEventListener,
             logger.info(log);
 	}
 
-	gl.glUseProgram(shaderProgram);
-	gl.glUniform1i(uniLoc(gl, "texSampler"), 0);
-        gl.glUniform4fv(uniLoc(gl, "bgColor"), 1, background, 0);
+	gl.glUseProgramObjectARB(shaderProgram);
+	gl.glUniform1iARB(uniLoc(gl, "texSampler"), 0);
+        gl.glUniform4fvARB(uniLoc(gl, "bgColor"), 1, background, 0);
         draftQuality(gl, currentDraft);
         initialTrafo(gl, currentInitialTrafo);
         initGroup(gl);
@@ -357,7 +357,7 @@ class OpenGlRpl implements GLEventListener,
         currentInitialTrafo = initialTrafo;
         float[] it = new float[4];
         vec4ForHypTrafo(initialTrafo, it, 0);
-        gl.glUniform4fv(uniLoc(gl, "initialTrafo"), 1, it, 0);
+        gl.glUniform4fvARB(uniLoc(gl, "initialTrafo"), 1, it, 0);
     }
 
     private void initGroup(GL gl) {
@@ -376,10 +376,10 @@ class OpenGlRpl implements GLEventListener,
             vec4ForHypTrafo(gen, gm, i<<2);
             gp[i] = gen.doConj ? -1.f : 1.f;
         }
-	gl.glUniform1i(uniLoc(gl, "numGenerators"), n);
-        gl.glUniform4fv(uniLoc(gl, "insidenessChecks"), n, ic, 0);
-	gl.glUniform4fv(uniLoc(gl, "genMatrix"), n, gm, 0);        
-        gl.glUniform1fv(uniLoc(gl, "genParity"), n, gp, 0);
+	gl.glUniform1iARB(uniLoc(gl, "numGenerators"), n);
+        gl.glUniform4fvARB(uniLoc(gl, "insidenessChecks"), n, ic, 0);
+	gl.glUniform4fvARB(uniLoc(gl, "genMatrix"), n, gm, 0);        
+        gl.glUniform1fvARB(uniLoc(gl, "genParity"), n, gp, 0);
     }
 
     public void display(GLAutoDrawable drawable) {
@@ -455,7 +455,7 @@ class OpenGlRpl implements GLEventListener,
                 aaOffsets[i++] = 1.f;
             }
         }
-        gl.glUniform3fv(uniLoc(gl, "aaOffsets"), 9, aaOffsets, 0);
+        gl.glUniform3fvARB(uniLoc(gl, "aaOffsets"), 9, aaOffsets, 0);
     }
 
     public void displayChanged(GLAutoDrawable drawable,
@@ -467,7 +467,7 @@ class OpenGlRpl implements GLEventListener,
     private int uniLoc(GL gl, String name) {
         Integer loc = uniLocCache.get(name);
         if (loc == null) {
-            loc = Integer.valueOf(gl.glGetUniformLocation(shaderProgram, name));
+            loc = Integer.valueOf(gl.glGetUniformLocationARB(shaderProgram, name));
             uniLocCache.put(name, loc);
         }
         return loc.intValue();
@@ -480,8 +480,8 @@ class OpenGlRpl implements GLEventListener,
     }
 
     private void draftQuality(GL gl, boolean draft) {
-	gl.glUniform1i(uniLoc(gl, "numAaOffsets"), draft ? 1 : 9);
-	gl.glUniform1i(uniLoc(gl, "maxPathLength"), draft ? 12 : 50);
+	gl.glUniform1iARB(uniLoc(gl, "numAaOffsets"), draft ? 1 : 9);
+	gl.glUniform1iARB(uniLoc(gl, "maxPathLength"), draft ? 12 : 50);
         currentDraft = draft;
     }
 

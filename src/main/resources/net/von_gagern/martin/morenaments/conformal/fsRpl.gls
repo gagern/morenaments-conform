@@ -1,5 +1,3 @@
-#version 110
-
 const vec4 errorColor = vec4(1., 0., 0., 1.);
 const vec4 pathTooLong = vec4(0., 0., 0., 0.);
 const float violationTolerance = 0.0001;
