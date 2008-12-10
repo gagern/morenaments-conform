@@ -20,6 +20,7 @@
   </target>
 
   <target name="compile">
+    <property name="compile.args" value=""/>
     <mkdir dir="target/main/classes"/>
     <mkdir dir="target/main/java"/> <!-- dir for generated sources -->
     <path id="build.classpath">
@@ -27,10 +28,10 @@
 	<include name="*.jar"/>
       </fileset>
     </path>
-    <javac destdir="target/main/classes"
+    <javac destdir="target/main/classes" encoding="UTF-8"
 	   debug="true" deprecation="true" optimize="false"
 	   source="${api.version}" target="${api.version}">
-      <compilerarg value="-Xlint:all,-serial,-path" compiler="modern"/>
+      <compilerarg line="${compile.args}"/>
       <src path="src/main/java"/>
       <src path="target/main/java"/>
       <classpath refid="build.classpath"/>
@@ -45,6 +46,7 @@
   </target>
 
   <target name="compile-tests" depends="compile">
+    <property name="test.api.version" value="${api.version}"/>
     <mkdir dir="target/test/classes"/>
     <mkdir dir="target/test/java"/> <!-- dir for generated sources -->
     <path id="test.classpath">
@@ -53,9 +55,9 @@
 	<include name="*.jar"/>
       </fileset>
     </path>
-    <javac destdir="target/test/classes"
+    <javac destdir="target/test/classes" encoding="UTF-8"
 	   debug="true" deprecation="true" optimize="false"
-	   source="${api.version}" target="${api.version}">
+	   source="${test.api.version}" target="${test.api.version}">
       <src path="src/test/java"/>
       <src path="target/test/java"/>
       <classpath refid="test.classpath"/>

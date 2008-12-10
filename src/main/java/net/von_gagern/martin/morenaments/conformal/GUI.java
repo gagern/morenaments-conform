@@ -233,7 +233,9 @@ public class GUI extends JDesktopPane {
                 img = reader.read(0);
             }
             catch (IndexOutOfBoundsException e) {
-                throw new IOException("File contains no images", e);
+                IOException e2 = new IOException("File contains no images");
+                e2.initCause(e);
+                throw e2;
             }
             // BufferedImage img = ImageIO.read(file);
             Group group = Group.fromImageComment(comment);

@@ -301,7 +301,9 @@ public class CommandLine {
                 img = reader.read(0);
             }
             catch (IndexOutOfBoundsException e) {
-                throw new IOException("File contains no images", e);
+                IOException e2 = new IOException("File contains no images");
+                e2.initCause(e);
+                throw e2;
             }
             Group g = Group.fromImageComment(comment);
             JFrame frm = new JFrame("OpenGlRpl");

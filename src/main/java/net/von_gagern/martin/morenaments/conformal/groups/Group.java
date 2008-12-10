@@ -143,7 +143,10 @@ public abstract class Group implements Cloneable {
             return g;
         }
         catch (Exception e) {
-            throw new IOException("Illegal image comment: " + comment, e);
+            IOException e2 =
+                new IOException("Illegal image comment: " + comment);
+            e2.initCause(e);
+            throw e2;
         }
     }
 
