@@ -87,6 +87,9 @@ public class GUI extends JDesktopPane {
             add(menuFrame);
             menuFrame.setVisible(true);
         }
+        for (String arg: cl.getArgs()) {
+            loadImage(new File(arg));
+        }
     }
 
     private JMenuBar createMenuBar() {
@@ -217,7 +220,10 @@ public class GUI extends JDesktopPane {
         int res = fc.showOpenDialog(this);
         if (res != JFileChooser.APPROVE_OPTION) return;
         currentDir = fc.getCurrentDirectory();
-        File file = fc.getSelectedFile();
+        loadImage(fc.getSelectedFile());
+    }
+
+    private void loadImage(File file) {
         try {
             ImageInputStream stream = new FileImageInputStream(file);
             Iterator<ImageReader> iri = ImageIO.getImageReaders(stream);

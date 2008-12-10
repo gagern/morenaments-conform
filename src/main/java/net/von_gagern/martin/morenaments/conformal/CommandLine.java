@@ -51,8 +51,11 @@ public class CommandLine {
 
     private boolean terminateAfterJobs = true;
 
+    private List<String> args;
+
     public CommandLine(String[] args) throws OptException {
         jobs = new ArrayList<Job>();
+        this.args = new ArrayList<String>();
         OptParser<CommandLineOption> parser =
             OptParser.getInstance(CommandLineOption.values());
         for (OptPair<CommandLineOption> pair: parser.parse(args)) {
@@ -92,8 +95,10 @@ public class CommandLine {
     }
 
     private void argument(String arg) throws OptException {
-        if (action == null)
-            throw new OptException("No arguments allowed", arg);
+        if (action == null) {
+            args.add(arg);
+            return;
+        }
         switch (action) {
         case tile:
             tileArg(arg);
@@ -218,6 +223,10 @@ public class CommandLine {
     public int getSize(int defaultValue) {
         if (size == null) return defaultValue;
         return size;
+    }
+
+    public List<String> getArgs() {
+        return args;
     }
 
     private interface Job {
