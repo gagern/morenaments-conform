@@ -3,19 +3,23 @@ package net.von_gagern.martin.morenaments.conformal;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 
+import org.apache.log4j.Logger;
+
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;
 import net.von_gagern.martin.morenaments.conformal.groups.Group;
 
 public class TilingRenderer {
 
-    private final Group g;
+    private final Logger logger = Logger.getLogger(TilingRenderer.class);
 
-    private final HypTrafo[] insidenessChecks;
+    protected final Group g;
 
-    private final HypTrafo[] generators;
+    protected final HypTrafo[] insidenessChecks;
 
-    private PixelLookupSource source;
+    protected final HypTrafo[] generators;
+
+    protected PixelLookupSource source;
 
     private int r;
 
@@ -53,13 +57,14 @@ public class TilingRenderer {
             renderMinor(t[6],    0, -i-1,  1,  0, i  ); // -y, +x
             renderMinor(t[7],  i  ,   -1,  0, -1, i+1); // +x, -y
         }
-        if (true) {
-            System.out.println("Violation statistics:");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Violation statistics:");
             int maxViol;
             for (maxViol = violationStatistics.length - 1;
                  violationStatistics[maxViol] == 0; --maxViol);
             for (int i = 0; i <= maxViol; ++i)
-                System.out.printf("%3d:%7d%n", i, violationStatistics[i]);
+                logger.debug(String.format("%3d:%7d", i,
+                                           violationStatistics[i]));
         }
         return target;
     }
@@ -157,20 +162,7 @@ public class TilingRenderer {
 
     }
 
-    java.util.Map<HypTrafo, Integer> colorMap =
-	new java.util.HashMap<HypTrafo, Integer>();
-
-    java.util.Random rnd = new java.util.Random(1271476327);
-
     protected int getColor(HypTrafo t, Vec2C v) {
-        if (source == null) { // debug use
-            Integer color = colorMap.get(t);
-            if (color == null) {
-                color = 0xff000000 | rnd.nextInt(1 << 24);
-                colorMap.put(t, color);
-            }
-            return color;
-        }
         t.inverseTransform(v, v);
         Point2D p = v.dehomogenize(new Point2D.Double());
         return source.getRGB(p);

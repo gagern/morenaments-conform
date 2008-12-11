@@ -128,6 +128,10 @@ public class GUI extends JDesktopPane {
                 public void actionPerformed(ActionEvent e) {
                     tiling();
                 }}, imageActions)));
+        menu.add(new JMenuItem(aal(new AbstractAction("Render Grid") {
+                public void actionPerformed(ActionEvent e) {
+                    grid();
+                }}, imageActions)));
         menu.add(new JMenuItem(aal(new AbstractAction("Extract Tile") {
                 public void actionPerformed(ActionEvent e) {
                     tileExtract();
@@ -371,6 +375,13 @@ public class GUI extends JDesktopPane {
         start(new TilingTask(img, g, size, newTitle));
     }
 
+    private void grid() {
+        Group g = queryGroup(false);
+        if (g == null) return;
+        String newTitle = "Grid of " + currentImageDisplay.getTitle();
+        start(new GridTask(g, size, newTitle));
+    }
+
     private void tileExtract() {
         Group g = queryGroup(false);
         if (g == null) return;
@@ -463,6 +474,36 @@ public class GUI extends JDesktopPane {
             PixelLookupSource pls = new SimplePixelLookupSource(inImg, tr);
             TilingRenderer t = new TilingRenderer(g);
             outImg = t.render(pls, size, outImg);
+        }
+
+        protected void done() {
+            addImage(title, outImg, g);
+        }
+
+        protected void exception(Exception e) {
+            error(e);
+        }
+
+    }
+
+    private class GridTask extends Work {
+        
+        private final String title;
+        private final Group g;
+        private final int size;
+
+        private BufferedImage outImg;
+
+        public GridTask(Group g, int size, String title) {
+            super(busy);
+            this.g = g;
+            this.size = size;
+            this.title = title;
+        }
+
+        protected void doInBackground() throws Exception {
+            GridRenderer t = new GridRenderer(g);
+            outImg = t.render(size, outImg);
         }
 
         protected void done() {
