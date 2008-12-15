@@ -49,11 +49,15 @@ public class Triangulation
         return new ArcEdge(p1, p2, c, r);
     }
 
-    public void triangulatePoincare(List<Point2D> corners) {
+    public void triangulatePoincarePoints(List<Point2D> corners) {
         List<Vertex> vertices = new ArrayList<Vertex>(corners.size());
         for (Point2D corner: corners) vertices.add(new Vertex(corner));
+        triangulatePoincareVertices(vertices);
+    }
+
+    public void triangulatePoincareVertices(List<Vertex> corners) {
         triangles = new ArrayList<Triangle>(corners.size() - 2);
-        delaunay(vertices);
+        delaunay(corners);
         assert triangles.size() == corners.size() - 2;
         triangulateImpl();
     }

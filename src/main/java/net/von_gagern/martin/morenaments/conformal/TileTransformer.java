@@ -42,7 +42,7 @@ public class TileTransformer implements Runnable {
 
     private Group g;
 
-    private List<Point2D> hypCorners;
+    private List<Vertex> hypCorners;
 
     private Triangulation hypMesh;
 
@@ -56,7 +56,9 @@ public class TileTransformer implements Runnable {
 
     public void transform() throws MeshException {
         hypMesh = g.getTriangulation();
-        hypCorners = g.getHypTileCorners();
+        hypCorners = new ArrayList<Vertex>(g.getHypTileCorners().size());
+        for (Point2D corner : g.getHypTileCorners())
+            hypCorners.add(new Vertex(corner));
         if (hypMesh != null) {
             dumpTriangles("hypMesh", hypMesh);
             lastUsedTriangle = centerTriangle = findCenter(hypMesh);
@@ -68,22 +70,22 @@ public class TileTransformer implements Runnable {
         // Approximate hyperbolic tile by a triangulated mesh
         logger.debug("Creating hyperbolic mesh");
         hypMesh = new Triangulation();
-        hypMesh.triangulatePoincare(hypCorners);
+        hypMesh.triangulatePoincareVertices(hypCorners);
         dumpTriangles("hypMesh", hypMesh);
         logger.debug("Finding center");
         lastUsedTriangle = centerTriangle = findCenter(hypMesh);
 
         // Transform mesh to euclidean shape using discrete conformal map
         logger.debug("Transforming hyperbolic mesh");
-        Conformal c = Conformal.getInstance(hypMesh);
-        Map<Point2D, Double> angles =
-            new HashMap<Point2D, Double>(hypCorners.size());
+        Conformal<Vertex> c = Conformal.getInstance(hypMesh);
+        Map<Vertex, Double> angles =
+            new HashMap<Vertex, Double>(hypCorners.size()*4/3 + 1);
         for (int i = 0; i < hypCorners.size(); ++i) {
             Double angle = g.getEuclideanCornerAngle(i);
             angles.put(hypCorners.get(i), angle);
         }
         c.fixedBoundaryCurvature(angles);
-        ResultMesh<Point2D> eucMesh = c.transform();
+        ResultMesh<Vertex> eucMesh = c.transform();
         dumpTriangles("eucMesh", eucMesh);
 
         /* For every triangle, find a projective transformation which
@@ -120,38 +122,38 @@ public class TileTransformer implements Runnable {
         logger.debug("Mesh transformation complete");
     }
 
-    private static class AffineMesh implements LocatedMesh<Point2D> {
+    private static class AffineMesh implements LocatedMesh<Vertex> {
 
-        private LocatedMesh<Point2D> inMesh;
+        private LocatedMesh<Vertex> inMesh;
 
         private Mat3x3R mat;
 
-        public AffineMesh(LocatedMesh<Point2D> inMesh, Mat3x3R transform) {
+        public AffineMesh(LocatedMesh<Vertex> inMesh, Mat3x3R transform) {
             this.inMesh = inMesh;
             mat = transform.clone();
             mat.scale(1/mat.get(2, 2));
         }
 
-        public Iterator<? extends CorneredTriangle<? extends Point2D>>
+        public Iterator<? extends CorneredTriangle<? extends Vertex>>
         iterator() {
             return inMesh.iterator();
         }
 
-        public double getX(Point2D v) {
+        public double getX(Vertex v) {
             double x = inMesh.getX(v), y = inMesh.getY(v);
             return mat.get(0, 0)*x + mat.get(0, 1)*y + mat.get(0, 2);
         }
 
-        public double getY(Point2D v) {
+        public double getY(Vertex v) {
             double x = inMesh.getX(v), y = inMesh.getY(v);
             return mat.get(1, 0)*x + mat.get(1, 1)*y + mat.get(1, 2);
         }
 
-        public double getZ(Point2D v) {
+        public double getZ(Vertex v) {
             return 0;
         }
 
-        public double edgeLength(Point2D v1, Point2D v2) {
+        public double edgeLength(Vertex v1, Vertex v2) {
             double x1 = inMesh.getX(v1), y1 = inMesh.getY(v1);
             double x2 = inMesh.getX(v2), y2 = inMesh.getY(v2);
             double dx = mat.get(0, 0)*(x1 - x2) + mat.get(0, 1)*(y1 - y2);
