@@ -1,13 +1,9 @@
 package net.von_gagern.martin.morenaments.conformal;
 
-import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
-import java.util.List;
 
 import org.apache.log4j.Logger;
 

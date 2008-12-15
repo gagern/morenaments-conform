@@ -1,6 +1,5 @@
 package net.von_gagern.martin.morenaments.conformal.triangulate;
 
-import java.awt.geom.Point2D;
 
 public class Edge {
 

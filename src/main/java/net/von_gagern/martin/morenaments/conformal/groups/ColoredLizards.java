@@ -2,9 +2,7 @@ package net.von_gagern.martin.morenaments.conformal.groups;
 
 import java.awt.geom.Point2D;
 import java.util.List;
-import java.util.ArrayList;
 import de.tum.in.gagern.hornamente.HypTrafo;
-import de.tum.in.gagern.hornamente.Vec2C;
 
 class ColoredLizards extends ReflectionBasedGroup {
 

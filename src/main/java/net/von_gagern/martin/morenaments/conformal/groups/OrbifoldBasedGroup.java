@@ -13,7 +13,6 @@ import net.von_gagern.martin.confoo.conformal.Conformal;
 import net.von_gagern.martin.confoo.conformal.Geometry;
 import net.von_gagern.martin.confoo.conformal.ResultMesh;
 import net.von_gagern.martin.confoo.mesh.MeshException;
-import net.von_gagern.martin.confoo.mesh.MetricMesh;
 
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;

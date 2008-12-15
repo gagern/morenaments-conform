@@ -7,12 +7,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import net.von_gagern.martin.confoo.mesh.MetricMesh;
-import net.von_gagern.martin.confoo.mesh.SimpleTriangle;
 
 import net.von_gagern.martin.morenaments.conformal.Mat3x3R;
 
