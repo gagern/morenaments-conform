@@ -71,6 +71,17 @@ class OpenGlRpl implements GLEventListener,
     private int shaderProgram;
     private static final float grayLevel = 12.f/15.f;
     private float[] background = { grayLevel, grayLevel, grayLevel, 1.0f };
+    private float[] aaPositions = {
+	-1/3.f, -1/3.f,
+	1/3.f, 1/3.f,
+	-1/3.f, 1/3.f,
+	1/3.f, -1/3.f,
+	0, 0,
+	-1/4.f, 0,
+	1/4.f, 0,
+	0, -1/4.f,
+	0, 1/4.f,
+    };
     private int maxTextureSize;
     private static final HypTrafo flipReal =
         new HypTrafo(new Vec2C(0., 0., 0., 1.), true);
@@ -470,17 +481,16 @@ class OpenGlRpl implements GLEventListener,
         double cx = center.x, cy = center.y;
 	gl.glOrtho(cx-wz, cx+wz, cy+hz, cy-hz, 0., 1.);
 
-        float[] aaOffsets = new float[9*3];
-        float basicOffset = (float)(pixelSize/3.);
+	final int n = aaPositions.length/2;
+        float[] aaOffsets = new float[n*3];
+        float basicOffset = (float)pixelSize;
         int i = 0;
-        for (int dx = 1; dx <= 3; ++dx) {
-            for (int dy = 1; dy <= 3; ++dy) {
-                aaOffsets[i++] = (dx%3 - 1)*basicOffset;
-                aaOffsets[i++] = (dy%3 - 1)*basicOffset;
-                aaOffsets[i++] = 1.f;
-            }
-        }
-        si.uniform3fv(uniLoc(si, "aaOffsets"), 9, aaOffsets, 0);
+	for (int j = 0; j < aaPositions.length; j += 2) {
+	    aaOffsets[i++] = basicOffset*aaPositions[j];
+	    aaOffsets[i++] = basicOffset*aaPositions[j+1];
+	    aaOffsets[i++] = 1.f;
+	}
+        si.uniform3fv(uniLoc(si, "aaOffsets"), n, aaOffsets, 0);
     }
 
     public void displayChanged(GLAutoDrawable drawable,
@@ -505,8 +515,8 @@ class OpenGlRpl implements GLEventListener,
     }
 
     private void draftQuality(ShaderInterface si, boolean draft) {
-	si.uniform1i(uniLoc(si, "numAaOffsets"), draft ? 1 : 9);
-	si.uniform1i(uniLoc(si, "maxPathLength"), draft ? 12 : 50);
+	si.uniform1i(uniLoc(si, "numAaOffsets"), draft ? 4 : 9);
+	si.uniform1i(uniLoc(si, "maxPathLength"), draft ? 32 : 128);
         currentDraft = draft;
     }
 

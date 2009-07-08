@@ -96,7 +96,8 @@ vec4 sample(vec2 pos, inout vec4 trM, inout float trP) {
 
     vec4 v = findTrafo(v0, trM, trP);
     if (v == pathTooLong)
-        return errorColor;
+        /* return errorColor; */
+        return bgColor;
     vec3 rp2 = v.z*v.xyz + v.w*vec3(v.y, -v.x, v.w);
     return texture2D(texSampler, rp2.xy/rp2.z/2.0 + vec2(0.5, 0.5));
 }
