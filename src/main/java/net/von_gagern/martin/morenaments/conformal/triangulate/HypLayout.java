@@ -23,7 +23,7 @@ public class HypLayout {
 
     private Triangle orbifoldCenter;
 
-    private List<HypTrafo> insidenessChecks;
+    protected List<HypTrafo> insidenessChecks;
 
     private HashMap<Vertex, Integer> angleCounts;
 
@@ -250,7 +250,7 @@ public class HypLayout {
         return tOutFlat;
     }
 
-    private boolean triangleIsRelevant(Point2D... points) {
+    protected boolean triangleIsRelevant(Point2D... points) {
         Vec2C tmp = new Vec2C();
         CHECKS: for (HypTrafo check: insidenessChecks) {
             for (Point2D p: points) {

@@ -220,6 +220,10 @@ public abstract class Group implements Cloneable {
         return new Pgg();
     }
 
+    public static P1 p1() {
+        return new P1();
+    }
+
     public enum EuclideanGroup {
         p6m, p6, p31m, p3m1, p3, p4g, p4m, p4,
         coloredLizards,

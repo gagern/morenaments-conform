@@ -288,7 +288,8 @@ public class TileTransformer implements Runnable {
                     t2 = lastUsedTriangle = centerTriangle; // fall back
                 }
                 else {
-                    logger.warn("Dealing with pixel outside triangle mesh");
+                    logger.warn("Dealing with pixel " + in +
+                                " outside triangle mesh");
                     break;
                 }
             }

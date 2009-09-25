@@ -34,6 +34,8 @@ public abstract class EucOrbifold implements MetricMesh<Vertex> {
 
     private Triangle center;
 
+    private boolean splitDir;
+
     private List<Triangle> ts;
 
     private HashMap<VertexPair, Edge> es;
@@ -65,6 +67,7 @@ public abstract class EucOrbifold implements MetricMesh<Vertex> {
     }
 
     public void mesh(double la, double lb, double lc, boolean dc) {
+        splitDir = dc;
         int ic = dc ? 1 : 0;
         logger.debug("Meshing with la=" + la + ", lb=" + lb +
                      ", lc=" + lc + ", ic=" + ic);
@@ -118,6 +121,10 @@ public abstract class EucOrbifold implements MetricMesh<Vertex> {
 
     public Triangle getCenter() {
         return center;
+    }
+
+    public boolean getSplitDir() {
+        return splitDir;
     }
 
     public double edgeLength(Vertex v1, Vertex v2) {
