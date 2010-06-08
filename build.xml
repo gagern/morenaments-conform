@@ -85,7 +85,7 @@
   <target name="run" depends="compile">
     <property name="run.jvmargs" value=""/>
     <property name="run.args" value=""/>
-    <java classname="${project.main}" fork="true" maxmemory="1024m">
+    <java classname="${project.main}" fork="true" maxmemory="2048m">
       <classpath refid="run.classpath"/>
       <sysproperty key="java.library.path" path="lib/default"/>
       <assertions><enable/></assertions>
