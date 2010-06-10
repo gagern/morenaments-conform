@@ -444,7 +444,12 @@
   <target name="tests.junit" depends="tests.compile,tests.junit.load">
     <property name="tests.junit.forkmode" value="once"/>
     <property name="tests.junit.format" value="frames"/>
+    <property name="tests.junit.haltonfailure" value="false"/>
+    <property name="tests.junit.haltonerror" value="false"/>
     <property name="dir.junit" value="${dir.target}/test/junit"/>
+    <pathconvert property="dir.debugout">
+      <file file="${dir.junit}"/>
+    </pathconvert>
     <delete dir="${dir.junit}"/>
     <mkdir dir="${dir.junit}/temp"/>
     <mkdir dir="${dir.junit}/reports"/>
@@ -453,8 +458,8 @@
            includeantruntime="false"
            errorproperty="tests.junit.error"
            failureproperty="tests.failure"
-           haltonfailure="false"
-           haltonerror="false"
+           haltonfailure="${tests.junit.haltonfailure}"
+           haltonerror="${tests.junit.haltonerror}"
            dir="${dir.junit}/temp"
            tempdir="${dir.junit}/temp">
       <classpath refid="path.tests.run"/>
@@ -468,6 +473,10 @@
           <include name="**/*Test*.class"/>
         </fileset>
       </batchtest>
+      <syspropertyset>
+        <propertyref name="dir.debugout"/>
+        <propertyref name="basedir"/>
+      </syspropertyset>
     </junit>
     <junitreport todir="${dir.junit}" tofile="AllTests.xml">
       <fileset dir="${dir.junit}/reports" includes="**/*.xml"/>
