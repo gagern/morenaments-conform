@@ -1,108 +1,789 @@
-<project name="conformal" default="all"
-	 xmlns:ivy="antlib:org.apache.ivy.ant">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:cs="antlib:com.puppycrawl.tools.checkstyle"
+         xmlns:mvg="http://martin.von-gagern.net/projects/ant/"
+         xmlns:ivy="antlib:org.apache.ivy.ant"
+         name="conformal"
+         default="build">
 
+  <description>Short (single-line) description of project</description>
+
+  <!--
+    - ======================================================================
+    - = Some properties, more defined in some targets
+    - ======================================================================
+    -->
   <property file="build/local.properties"/>
-  <property file="build/sign.properties"/>
+  <property file="${user.home}/.ant/mvgagern.properties"/>
   <property file="build/build.properties"/>
 
+  <property name="build.sysclasspath" value="ignore"/>
+  <property name="ant.version.min" value="1.7"/>
   <property name="api.version" value="1.5"/>
   <property name="artifact.name" value="${ant.project.name}"/>
-  <property name="ivy.settings.file" value="build/ivysettings.xml"/>
+  <property name="source.prefix" value="${artifact.name}"/>
+  <property name="dir.target" value="target"/>
+  <property name="dir.artifacts" value="${dir.target}/artifatcs"/>
+  <property name="artifact.jar.name" value="${artifact.name}"/>
+  <property name="artifact.source.name" value="${artifact.name}-src"/>
+  <property name="artifact.jsource.name" value="${artifact.name}-jsrc"/>
+  <property name="artifact.javadoc.name" value="${artifact.name}-api"/>
+  <property name="artifacts.pattern"
+            value="${dir.artifacts}/[type]s/[artifact].[ext]"/>
+  <property name="ui.cli.class"
+            value="net.von_gagern.martin.morenaments.conformal.CommandLine"/>
 
-  <target name="clean">
-    <delete dir="target"/>
+  <!--
+    - ======================================================================
+    - = Common top-level targets
+    - ======================================================================
+    -->
+
+  <target name="clean" description="Delete generated files">
+    <delete dir="${dir.target}"/>
   </target>
 
-  <target name="deps">
-    <ivy:configure/>
-    <ivy:resolve/>
-    <ivy:retrieve pattern="lib/[conf]/[artifact].[ext]" />
+  <target name="distclean"
+          description="Delete generated files and retrieved dependencies">
+    <delete dir="${dir.target}"/>
+    <delete dir="lib"/>
+    <delete dir="ivy"/>
   </target>
 
-  <target name="compile">
-    <property name="compile.args" value=""/>
-    <mkdir dir="target/main/classes"/>
-    <mkdir dir="target/main/java"/> <!-- dir for generated sources -->
-    <path id="build.classpath">
-      <fileset dir="lib/default">
-	<include name="*.jar"/>
+  <target name="main"
+          depends="jar"
+          description="Build main artifact (no deps, quick)"/>
+  <target name="build" depends="deps,main" description="Build main artifact"/>
+
+  <target name="rebuild"
+          depends="clean"
+          description="clean &amp; build: Build main artifact from scratch">
+    <antcall target="build" inheritAll="false"/>
+  </target>
+
+  <target name="all"
+          depends="deps,artifacts"
+          description="Build all artifacts"/>
+
+  <!--
+    - ======================================================================
+    - = Ivy setup
+    - ======================================================================
+    -->
+
+  <target name="ivy.check" depends="ant.version.check">
+    <available property="ivy.available"
+               resource="org/apache/ivy/ant/antlib.xml"/>
+    <condition property="ivy.downloaded">
+      <or>
+        <isset property="ivy.available"/>
+        <resourcecount when="greater" count="0">
+          <fileset dir="." includes="lib/ant/jars/org.apache.ivy/ivy/**/*.jar"/>
+        </resourcecount>
+      </or>
+    </condition>
+    <macrodef name="ifavailable"
+              uri="http://martin.von-gagern.net/projects/ant/">
+      <attribute name="property"/>
+      <attribute name="file"/>
+      <sequential>
+        <condition property="@{property}" value="@{file}">
+          <and>
+            <not>
+              <isset property="@{property}"/>
+            </not>
+            <available file="@{file}"/>
+          </and>
+        </condition>
+      </sequential>
+    </macrodef>
+    <mvg:ifavailable property="ivy.settings.file"
+                     file="${basedir}/build/ivysettings.xml"/>
+    <mvg:ifavailable property="ivy.settings.file"
+                     file="${user.home}/.ant/ivysettings-mvgagern.xml"/>
+  </target>
+
+  <target name="ivy.get" depends="ivy.check" unless="ivy.downloaded">
+    <property name="ivy.get.version" value="2.0.0"/>
+    <property name="ivy.get.mirror" value="http://www.apache.org/dist"/>
+    <property name="ivy.get.dir" value="ant/ivy/${ivy.get.version}"/>
+    <property name="ivy.get.file"
+              value="apache-ivy-${ivy.get.version}-bin-with-deps.zip"/>
+    <property name="ivy.get.url"
+              value="${ivy.get.mirror}/${ivy.get.dir}/${ivy.get.file}"/>
+    <property name="ivy.get.usetimestamp" value="false"/>
+    <property name="ivy.get.verbose" value="true"/>
+    <mkdir dir="lib/ant/zips"/>
+    <get src="${ivy.get.url}"
+         dest="lib/ant/zips/${ivy.get.file}"
+         usetimestamp="${ivy.get.usetimestamp}"
+         verbose="{ivy.get.verbose}"/>
+    <delete dir="lib/ant/temp"/>
+    <mkdir dir="lib/ant/temp"/>
+    <unzip src="lib/ant/zips/${ivy.get.file}" dest="lib/ant/temp"/>
+    <copy todir="lib/ant/jars/org.apache.ivy/ivy">
+      <fileset dir="lib/ant/temp">
+        <include name="**/*.jar"/>
+        <exclude name="**/example/**"/>
+      </fileset>
+      <chainedmapper>
+        <flattenmapper/>
+        <regexpmapper from="^(.*?)(-[0-9]+\.[0-9]+.*)?\.jar$$" to="\1.jar"/>
+      </chainedmapper>
+    </copy>
+    <delete dir="lib/ant/temp"/>
+  </target>
+
+  <target name="ivy.load" depends="ivy.get" unless="ivy.available">
+    <!--
+      If ivy is not globally installed for this account, we use our
+      own copy. In this case, we want to keep the ivy directory local
+      as well, so that we don't put any files outside our source tree.
+    -->
+    <echo level="info" message="Loading local ivy instance"/>
+    <property name="ivy.default.ivy.user.dir" value="${basedir}/ivy"/>
+    <taskdef resource="org/apache/ivy/ant/antlib.xml"
+             uri="antlib:org.apache.ivy.ant">
+      <classpath>
+        <fileset dir="lib" includes="ant/jars/**/*.jar"/>
+      </classpath>
+    </taskdef>
+  </target>
+
+  <target name="ivy.config.local"
+          depends="ivy.check,ivy.load"
+          if="ivy.settings.file">
+    <echo level="info"
+          message="Loading Ivy settings from ${ivy.settings.file}"/>
+    <ivy:configure file="${ivy.settings.file}"/>
+  </target>
+
+  <target name="ivy.config.public"
+          depends="ivy.check,ivy.load"
+          unless="ivy.settings.file">
+    <ivy:configure url="http://martin.von-gagern.net/ivy/ivysettings1.xml"/>
+  </target>
+
+  <target name="ivy.config" depends="ivy.config.local,ivy.config.public"/>
+
+  <target name="ivy.resolve" depends="ivy.config">
+    <ivy:resolve conf="*" transitive="true"/>
+  </target>
+
+  <target name="deps"
+          depends="ivy.resolve"
+          description="Resolve and retrieve dependencies">
+    <property name="ivy.symlink" value="false"/>
+    <mkdir dir="lib"/>
+    <ivy:retrieve
+      pattern="lib/[conf]/[type]s/[organization]/[module]/[artifact].[ext]"
+      ivypattern="lib/[conf]/[type]s/[organization]/[module].[ext]"
+      symlink="${ivy.symlink}"/>
+  </target>
+
+  <target name="ivy.report" depends="ivy.resolve,init.paths">
+    <delete dir="${dir.target}/ivy/report"/>
+    <ivy:report todir="${dir.target}/ivy/report"
+                xsl="true"
+                xml="true"
+                dot="true"/>
+    <copy todir="${dir.target}/ivy/report">
+      <javaresource name="org/apache/ivy/plugins/report/ivy-report.xsl">
+        <classpath refid="path.ant"/>
+      </javaresource>
+      <flattenmapper/>
+    </copy>
+    <pathconvert property="ivy.report.dir">
+      <file file="${dir.target}/ivy/report"/>
+    </pathconvert>
+    <echo message="Ivy report saved in ${ivy.report.dir}"/>
+  </target>
+
+  <!--
+    - ======================================================================
+    - = Bazaar support
+    - ======================================================================
+    -->
+
+  <target name="bzr.init">
+    <property name="bzr.cmd" value="bzr"/>
+    <property name="bzr.args" value=""/>
+    <property name="bzr.fail" value="true"/>
+    <macrodef name="bzr" uri="http://martin.von-gagern.net/projects/ant/">
+      <attribute name="command"/>
+      <attribute name="fail" default="${bzr.fail}"/>
+      <element name="children" implicit="true"/>
+      <sequential>
+        <echo level="info" message="Executing bzr @{command}"/>
+        <exec executable="${bzr.cmd}"
+              dir="."
+              failonerror="@{fail}"
+              failifexecutionfails="@{fail}">
+          <arg line="${bzr.args}"/>
+          <arg value="@{command}"/>
+          <children/>
+        </exec>
+      </sequential>
+    </macrodef>
+  </target>
+
+  <target name="meta.bzr" depends="meta.init,bzr.version-info">
+    <delete file="${dir.target}/classes/META-INF/bzr.properties"/>
+    <copy file="${bzr.properties}"
+          tofile="${dir.target}/classes/META-INF/bzr.properties"
+          failonerror="false"/>
+  </target>
+
+  <target name="bzr.version-info" depends="bzr.init">
+    <mkdir dir="${dir.target}"/>
+    <property name="bzr.properties" value="${dir.target}/bzr.properties"/>
+    <delete file="${bzr.properties}"/>
+    <mvg:bzr command="version-info" fail="false">
+      <arg value="--check-clean"/>
+      <env key="LC_ALL" value="C"/>
+      <redirector output="${bzr.properties}"
+                  logError="true"
+                  createemptyfiles="false"/>
+    </mvg:bzr>
+    <property file="${bzr.properties}" prefix="bzr.vi"/>
+  </target>
+
+  <target name="release.check.bzr" depends="bzr.version-info">
+    <fail message="Strict bzr execution enforced, please set bzr.fail=true">
+      <condition>
+        <not>
+          <equals arg1="${bzr.fail}" arg2="true"/>
+        </not>
+      </condition>
+    </fail>
+    <fail message="Could not get bzr version info">
+      <condition>
+        <not>
+          <available file="${bzr.properties}"/>
+        </not>
+      </condition>
+    </fail>
+    <fail message="Unknown bzr branch state, please configure bzr">
+      <condition>
+        <not>
+          <isset property="bzr.vi.clean"/>
+        </not>
+      </condition>
+    </fail>
+    <fail message="Working copy is not clean, please commit changes">
+      <condition>
+        <not>
+          <equals arg1="${bzr.vi.clean}" arg2="True" casesensitive="false"/>
+        </not>
+      </condition>
+    </fail>
+    <fail message="Unknown bzr branch nick">
+      <condition>
+        <not>
+          <isset property="bzr.vi.branch-nick"/>
+        </not>
+      </condition>
+    </fail>
+  </target>
+
+  <!--
+    - ======================================================================
+    - = Core build targets
+    - ======================================================================
+    -->
+
+  <target name="ant.version.check">
+    <antversion property="ant.version.current"/>
+    <antversion property="ant.version.ok" atleast="${ant.version.min}"/>
+    <fail unless="ant.version.ok"
+          message="Ant version ${ant.version.min} or later required"/>
+  </target>
+
+  <target name="init.srcgen">
+    <mkdir dir="${dir.target}/java"/>
+  </target>
+
+  <target name="srcgen"
+          depends="init.srcgen"
+          description="Generate additional Java source files"/>
+
+  <target name="init.paths">
+    <path id="path.ant">
+      <fileset dir="lib" includes="ant/jars/**/*.jar"/>
+    </path>
+    <path id="path.src">
+      <pathelement location="src/main/java"/>
+      <pathelement location="${dir.target}/java"/>
+    </path>
+    <path id="path.boot">
+      <fileset dir="lib" includes="boot/jars/**/*.jar"/>
+    </path>
+    <path id="path.compile">
+      <fileset dir="lib" includes="cdep/jars/**/*.jar"/>
+    </path>
+    <path id="path.optrun">
+      <fileset dir="lib" includes="optrun/jars/**/*.jar"/>
+    </path>
+    <path id="path.tests.compile">
+      <pathelement location="${dir.target}/classes"/>
+      <fileset dir="lib">
+        <include name="test/jars/**/*.jar"/>
+        <include name="cdep/jars/**/*.jar"/>
       </fileset>
     </path>
-    <javac destdir="target/main/classes" encoding="UTF-8"
-	   debug="true" deprecation="true" optimize="false"
-	   source="${api.version}" target="${api.version}">
+    <path id="path.tests.run">
+      <pathelement location="${dir.target}/test/classes"/>
+      <pathelement location="${dir.target}/classes"/>
+      <fileset dir="lib">
+        <include name="test/jars/**/*.jar"/>
+        <include name="optrun/jars/**/*.jar"/>
+      </fileset>
+    </path>
+  </target>
+
+  <target name="compile"
+          depends="compile.classes,compile.resources"
+          description="Compile Java sources (no deps, quick)"/>
+
+  <target name="compile.init">
+    <mkdir dir="${dir.target}/classes"/>
+  </target>
+
+  <target name="compile.classes" depends="srcgen,init.paths,compile.init">
+    <property name="compile.args" value="-Xlint:all,-serial,-path"/>
+    <property name="compile.debug" value="true"/>
+    <property name="compile.optimize" value="false"/>
+    <property name="compile.deprecation" value="true"/>
+    <javac destdir="${dir.target}/classes"
+           encoding="UTF-8"
+           debug="${compile.debug}"
+           deprecation="${compile.deprecation}"
+           optimize="${compile.optimize}"
+           source="${api.version}"
+           target="${api.version}">
       <compilerarg line="${compile.args}"/>
-      <src path="src/main/java"/>
-      <src path="target/main/java"/>
-      <classpath refid="build.classpath"/>
+      <src refid="path.src"/>
+      <bootclasspath refid="path.boot"/>
+      <classpath refid="path.compile"/>
     </javac>
-    <copy todir="target/main/classes">
+  </target>
+
+  <target name="compile.resources" depends="compile.init">
+    <copy todir="${dir.target}/classes">
       <fileset dir="src/main/resources"/>
     </copy>
-    <path id="run.classpath">
-      <pathelement location="target/main/classes"/>
-      <path refid="build.classpath"/>
-    </path>
   </target>
 
-  <target name="compile-tests" depends="compile">
-    <property name="test.api.version" value="${api.version}"/>
-    <mkdir dir="target/test/classes"/>
-    <mkdir dir="target/test/java"/> <!-- dir for generated sources -->
-    <path id="test.classpath">
-      <path refid="run.classpath"/>
-      <fileset dir="lib/test">
-	<include name="*.jar"/>
-      </fileset>
-    </path>
-    <javac destdir="target/test/classes" encoding="UTF-8"
-	   debug="true" deprecation="true" optimize="false"
-	   source="${test.api.version}" target="${test.api.version}">
+  <!--
+    - ======================================================================
+    - = Testing
+    - ======================================================================
+    -->
+
+  <target name="tests.compile" depends="init.paths,compile">
+    <property name="tests.api.version" value="${api.version}"/>
+    <property name="tests.compile.args" value="${compile.args}"/>
+    <property name="tests.compile.debug" value="${compile.debug}"/>
+    <property name="tests.compile.optimize" value="${compile.optimize}"/>
+    <property name="tests.compile.deprecation" value="${compile.deprecation}"/>
+    <mkdir dir="src/test/java"/>
+    <mkdir dir="src/test/resources"/>
+    <mkdir dir="${dir.target}/test/java"/>
+    <mkdir dir="${dir.target}/test/classes"/>
+    <javac destdir="${dir.target}/test/classes"
+           encoding="UTF-8"
+           debug="true"
+           deprecation="true"
+           optimize="false"
+           source="${tests.api.version}"
+           target="${tests.api.version}">
       <src path="src/test/java"/>
-      <src path="target/test/java"/>
-      <classpath refid="test.classpath"/>
+      <src path="${dir.target}/test/java"/>
+      <classpath refid="path.tests.compile"/>
     </javac>
-    <copy todir="target/test/classes">
+    <copy todir="${dir.target}/test/classes">
       <fileset dir="src/test/resources"/>
     </copy>
   </target>
 
-  <target name="jar" depends="compile">
-    <pathconvert dirsep="/" pathsep=" " property="jar.path">
-      <path refid="build.classpath"/>
-      <mapper type="flatten"/>
-    </pathconvert>
-    <jar destfile="target/${artifact.name}.jar" index="true">
-      <manifest>
-	<attribute name="Main-Class" value="${project.main}"/>
-	<attribute name="Class-Path" value="${jar.path}"/>
-      </manifest>
-      <indexjars refid="build.classpath"/>
-      <fileset dir="target/main/classes"/>
-    </jar>
+  <target name="test" depends="tests.junit"/>
+
+  <target name="tests.junit.check">
+    <available
+      property="tests.junit.available"
+      classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"/>
   </target>
 
-  <target name="run" depends="compile">
+  <target name="tests.junit.load"
+          depends="init.paths,tests.junit.check"
+          unless="tests.junit.available">
+    <taskdef
+      name="junit"
+      classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask">
+      <classpath refid="path.ant"/>
+    </taskdef>
+    <taskdef
+      name="junitreport"
+      classname="org.apache.tools.ant.taskdefs.optional.junit.XMLResultAggregator">
+      <classpath refid="path.ant"/>
+    </taskdef>
+  </target>
+
+  <target name="tests.junit" depends="tests.compile,tests.junit.load">
+    <property name="tests.junit.forkmode" value="once"/>
+    <property name="tests.junit.format" value="frames"/>
+    <property name="dir.junit" value="${dir.target}/test/junit"/>
+    <delete dir="${dir.junit}"/>
+    <mkdir dir="${dir.junit}/temp"/>
+    <mkdir dir="${dir.junit}/reports"/>
+    <junit fork="true"
+           forkmode="${tests.junit.forkmode}"
+           includeantruntime="false"
+           errorproperty="tests.junit.error"
+           failureproperty="tests.failure"
+           haltonfailure="false"
+           haltonerror="false"
+           dir="${dir.junit}/temp"
+           tempdir="${dir.junit}/temp">
+      <classpath refid="path.tests.run"/>
+      <assertions>
+        <enable/>
+      </assertions>
+      <formatter type="xml" usefile="true"/>
+      <formatter type="brief" usefile="false" unless="$"/>
+      <batchtest todir="${dir.junit}/reports">
+        <fileset dir="${dir.target}/test/classes">
+          <include name="**/*Test*.class"/>
+        </fileset>
+      </batchtest>
+    </junit>
+    <junitreport todir="${dir.junit}" tofile="AllTests.xml">
+      <fileset dir="${dir.junit}/reports" includes="**/*.xml"/>
+    </junitreport>
+    <pathconvert property="tests.junit.html">
+      <file file="${dir.junit}/html"/>
+    </pathconvert>
+    <!-- Can't use nested report element inside junitreport due to
+         https://issues.apache.org/bugzilla/show_bug.cgi?id=47002 -->
+    <xslt in="${dir.junit}/AllTests.xml" out="${dir.junit}/dummy">
+      <classpath refid="path.ant"/>
+      <style>
+        <javaresource
+          name="org/apache/tools/ant/taskdefs/optional/junit/xsl/junit-frames.xsl">
+          <classpath refid="path.ant"/>
+        </javaresource>
+      </style>
+      <param name="output.dir" expression="${tests.junit.html}"/>
+    </xslt>
+    <delete file="${dir.junit}/dummy"/>
+    <pathconvert property="tests.junit.index">
+      <file file="${dir.junit}/html/index.html"/>
+    </pathconvert>
+    <echo level="info"
+          message="JUnit test report saved as ${tests.junit.index}"/>
+  </target>
+
+  <target name="tests" depends="test" description="Run test cases (no deps)">
+    <fail message="Some tests failed" if="tests.failure"/>
+    <echo level="info">All tests successful</echo>
+  </target>
+
+  <!--
+    - ======================================================================
+    - = Running the code
+    - ======================================================================
+    -->
+
+  <target
+    name="run"
+    depends="compile"
+    description="Run application; configure using run.{jvmargs|class|args}">
+    <property name="run.class" value="${ui.cli.class}"/>
     <property name="run.jvmargs" value=""/>
     <property name="run.args" value=""/>
-    <java classname="${project.main}" fork="true" maxmemory="2048m">
-      <classpath refid="run.classpath"/>
-      <sysproperty key="java.library.path" path="lib/default"/>
-      <assertions><enable/></assertions>
+    <property name="run.maxmemory" value="256m"/>
+    <property name="run.dll.extra" value=""/>
+    <pathconvert property="run.dll.path">
+      <path>
+        <pathelement location="${dir.target}/dlls"/>
+        <dirset dir="lib" includes="optrun/dlls/*/*"/>
+        <pathelement path="${run.dll.extra}"/>
+      </path>
+    </pathconvert>
+    <java classname="${run.class}" fork="true" maxmemory="${run.maxmemory}">
+      <classpath>
+        <pathelement location="${dir.target}/classes"/>
+        <fileset dir="lib" includes="optrun/jars/**/*.jar"/>
+      </classpath>
+      <sysproperty key="java.library.path" path="${run.dll.path}"/>
+      <assertions>
+        <enable/>
+      </assertions>
       <jvmarg line="${run.jvmargs}"/>
       <arg line="${run.args}"/>
     </java>
   </target>
 
-  <target name="jars" depends="jar">
-    <mkdir dir="target/jars"/>
-    <copy todir="target/jars">
-      <fileset file="target/${artifact.name}.jar"/>
-      <path refid="build.classpath"/>
-    </copy>
+  <!--
+    - ======================================================================
+    - = Packaging artifacts
+    - ======================================================================
+    -->
+
+  <target name="meta" depends="meta.version,meta.bzr"/>
+
+  <target name="meta.init" depends="compile.init">
+    <mkdir dir="${dir.target}/classes/META-INF"/>
   </target>
 
-  <target name="all" depends="deps,jar">
+  <target name="meta.version"
+          depends="meta.init,meta.noversion"
+          if="release.revision">
+    <echo file="${dir.target}/classes/META-INF/version.properties"
+          message="version: ${release.revision}${line.separator}"/>
+    <echo level="info" message="version: ${release.revision}"/>
+  </target>
+
+  <target name="meta.noversion" unless="release.revision">
+    <delete file="${dir.target}/classes/META-INF/version.properties"/>
+    <echo level="info"
+          message="version: unknown, as release.revision isn't set."/>
+  </target>
+
+  <target name="jar" depends="init.paths,compile,meta">
+    <jar destfile="${dir.target}/${artifact.name}.jar" index="true">
+      <manifest>
+        <attribute name="Main-Class" value="${ui.cli.class}"/>
+      </manifest>
+      <fileset dir="${dir.target}/classes"/>
+      <metainf dir=".">
+        <include name="COPYING*"/>
+        <include name="LICENSE*"/>
+      </metainf>
+    </jar>
+  </target>
+
+  <target name="javadoc"
+          depends="srcgen,init.paths"
+          description="Generate public API documentation (no deps)">
+    <typedef resource="net/von_gagern/martin/ant/doclink/antlib.xml"
+             uri="http://martin.von-gagern.net/projects/ant/">
+      <classpath refid="path.ant"/>
+    </typedef>
+    <delete dir="${dir.target}/javadoc"/>
+    <mvg:javadoc destdir="${dir.target}/javadoc"
+                 encoding="UTF-8"
+                 charset="UTF-8"
+                 docencoding="UTF-8"
+                 failonerror="true">
+      <sourcepath refid="path.src"/>
+      <classpath refid="path.compile"/>
+      <bootclasspath refid="path.boot"/>
+      <mvg:doclinks>
+        <fileset dir="lib">
+          <include name="boot/ivys/**/*.xml"/>
+          <include name="cdep/ivys/**/*.xml"/>
+        </fileset>
+      </mvg:doclinks>
+    </mvg:javadoc>
+  </target>
+
+  <target name="artifact.jar" depends="jar">
+    <property name="artifact.jar.file"
+              value="${dir.artifacts}/jars/${artifact.jar.name}.jar"/>
+    <mkdir dir="${dir.artifacts}/jars"/>
+    <copy file="${dir.target}/${artifact.name}.jar"
+          todir="${dir.artifacts}/jars"/>
+  </target>
+
+  <target name="artifact.source" depends="bzr.init">
+    <property name="artifact.source.file"
+              value="${dir.artifacts}/sources/${artifact.source.name}.tar.bz2"/>
+    <mkdir dir="${dir.artifacts}/sources"/>
+    <mvg:bzr command="export">
+      <arg value="--root=${source.prefix}"/>
+      <arg file="${artifact.source.file}"/>
+      <arg file="."/>
+    </mvg:bzr>
+  </target>
+
+  <target name="artifact.java-source" depends="srcgen">
+    <property
+      name="artifact.jsource.file"
+      value="${dir.artifacts}/java-sources/${artifact.jsource.name}.jar"/>
+    <mkdir dir="${dir.artifacts}/java-sources"/>
+    <jar destfile="${artifact.jsource.file}" duplicate="fail" whenempty="fail">
+      <fileset dir="src/main/java" includes="**/*.java"/>
+      <fileset dir="${dir.target}/java" includes="**/*.java"/>
+      <metainf dir=".">
+        <include name="COPYING*"/>
+        <include name="LICENSE*"/>
+      </metainf>
+    </jar>
+  </target>
+
+  <target name="artifact.javadoc" depends="javadoc">
+    <property name="artifact.javadoc.file"
+              value="${dir.artifacts}/javadocs/${artifact.javadoc.name}.jar"/>
+    <mkdir dir="${dir.artifacts}/javadocs"/>
+    <jar destfile="${artifact.javadoc.file}" basedir="${dir.target}/javadoc"/>
+  </target>
+
+  <target
+    name="artifacts"
+    depends="artifact.jar,
+             artifact.source,
+             artifact.java-source,
+             artifact.javadoc"/>
+
+  <!--
+    - ======================================================================
+    - = Publishing and releasing
+    - ======================================================================
+    -->
+
+  <target name="ivy.deliver" depends="ivy.resolve,javadoc">
+    <property name="artifact.ivy.file" value="${dir.artifacts}/ivys/ivy.xml"/>
+    <property
+      name="doclink.href"
+      value="http://martin.von-gagern.sytes.net/javadoc/de.morenaments:conformal/"/>
+    <property name="publish.default.branch" value="snapshot"/>
+    <property name="publish.default.status" value="integration"/>
+    <property name="publish.default.revision" value="0.0"/>
+    <property name="publish.statuses" value="integration,milestone,release"/>
+    <input addproperty="publish.branch"
+           defaultvalue="${publish.default.branch}"
+           message="Branch? (don't use trunk unless you work on trunk)"/>
+    <input addproperty="publish.status"
+           defaultvalue="${publish.default.status}"
+           validargs="${publish.statuses}"
+           message="Status? ('integration' unless it's official)"/>
+    <input addproperty="publish.revision"
+           defaultvalue="${publish.default.revision}"
+           message="Revision? (Don't reuse version numbers)"/>
+    <ivy:deliver pubbranch="${publish.branch}"
+                 status="${publish.status}"
+                 pubrevision="${publish.revision}"
+                 deliverpattern="${artifacts.pattern}"/>
+    <mvg:doclink destfile="${artifact.ivy.file}"
+                 srcfile="${artifact.ivy.file}"
+                 javadocdir="${dir.target}/javadoc"
+                 javadocurl="${doclink.href}"
+                 normalizeAttrs="true"/>
+  </target>
+
+  <target name="publish"
+          depends="artifacts,tests,ivy.deliver"
+          description="publish artifacts interactively">
+    <property name="publish.default.resolver" value="local"/>
+    <input addproperty="publish.resolver"
+           defaultvalue="${publish.default.resolver}"
+           message="Resolver to publish to? (like 'local' or 'shared')"/>
+    <property name="publish.overwrite" value="false"/>
+    <ivy:publish pubbranch="${publish.branch}"
+                 status="${publish.status}"
+                 pubrevision="${publish.revision}"
+                 resolver="${publish.resolver}"
+                 overwrite="${publish.overwrite}"
+                 forcedeliver="false"
+                 artifactspattern="${artifacts.pattern}"/>
+  </target>
+
+  <target name="version.prev" depends="bzr.init">
+    <property name="bzr.version.pattern" value="[0-9]+(\.[0-9]+)+"/>
+    <property name="bzr.version.tagline"
+              value="^.*?(${bzr.version.pattern}).* [0-9][0-9.]*$$"/>
+    <mvg:bzr command="tags">
+      <arg value="--sort=time"/>
+      <env key="LC_ALL" value="C"/>
+      <redirector outputproperty="bzr.tags.out" logError="true">
+        <outputfilterchain>
+          <linecontainsregexp>
+            <regexp pattern="${bzr.version.tagline}"/>
+          </linecontainsregexp>
+          <tailfilter lines="1"/>
+          <striplinebreaks/>
+          <tokenfilter>
+            <filetokenizer/>
+            <replaceregex pattern="${bzr.version.tagline}" replace="\1"/>
+            <trim/>
+          </tokenfilter>
+        </outputfilterchain>
+      </redirector>
+    </mvg:bzr>
+    <condition property="version.prev" value="${bzr.tags.out}">
+      <length string="${bzr.tags.out}" when="gt" length="0"/>
+    </condition>
+    <condition property="version.prev.echo"
+               value="seems to be ${version.prev}."
+               else="could not be determined.">
+      <isset property="version.prev"/>
+    </condition>
+    <echo message="The previous revision ${version.prev.echo}"/>
+  </target>
+
+  <target name="version.next" depends="version.prev">
+    <!-- Here should be some code to automatically increment
+         version.prev if that is set. -->
+  </target>
+  <target name="release.check" depends="release.check.bzr,checkstyle"/>
+
+  <target name="release"
+          depends="release.check,version.next"
+          description="Release a new version">
+    <property name="bzr.tag.prefix" value="${ant.project.name}-"/>
+    <property name="release.default.branch" value="${bzr.vi.branch-nick}"/>
+    <condition property="release.default.revision"
+               value="${version.next}"
+               else="1.0.0">
+      <isset property="version.next"/>
+    </condition>
+    <property name="release.default.resolver" value="shared"/>
+    <input addproperty="publish.branch"
+           defaultvalue="${release.default.branch}"
+           message="Branch? (probably 'trunk' for mainline releases)"/>
+    <property name="release.status" value="release"/>
+    <input addproperty="release.revision"
+           defaultvalue="${release.default.revision}"
+           message="Revision? (Don't reuse version numbers)"/>
+    <input addproperty="release.resolver"
+           defaultvalue="${release.default.resolver}"
+           message="Resolver to publish to? ('local', 'shared', 'public')"/>
+    <property name="release.dir"
+              value="${dir.target}/release-${release.revision}"/>
+    <delete dir="${release.dir}"/>
+    <antcall target="publish" inheritAll="false">
+      <param name="dir.target" value="${release.dir}"/>
+      <param name="publish.branch" value="${release.branch}"/>
+      <param name="publish.status" value="${release.status}"/>
+      <param name="publish.revision" value="${release.revision}"/>
+      <param name="publish.resolver" value="${release.resolver}"/>
+      <param name="release.revision" value="${release.revision}"/>
+      <param
+        name="doclink.href"
+        value="http://martin.von-gagern.sytes.net/javadoc/de.morenaments:conformal:${release.revision}/"/>
+    </antcall>
+    <mvg:bzr command="tag">
+      <arg value="${bzr.tag.prefix}${release.revision}"/>
+    </mvg:bzr>
+  </target>
+
+  <!--
+    - ======================================================================
+    - = Style checks
+    - ======================================================================
+    -->
+
+  <target name="checkstyle" depends="init.paths">
+    <taskdef resource="com/puppycrawl/tools/checkstyle/antlib.xml"
+             uri="antlib:com.puppycrawl.tools.checkstyle">
+      <classpath refid="path.ant"/>
+    </taskdef>
+    <cs:checkstyle config="build/checkstyle.xml">
+      <classpath refid="path.ant"/>
+      <fileset dir="src/main">
+        <exclude name="**/*.png"/>
+      </fileset>
+    </cs:checkstyle>
   </target>
 
 </project>

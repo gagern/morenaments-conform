@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pd:project
+  xmlns:pd="http://martin.von-gagern.net/projects/instaant/project-descriptor"
+  version="1.0">
+
+  <pd:org>de.morenaments</pd:org>
+  <pd:mod>conformal</pd:mod>
+
+  <pd:info>
+    <pd:name>conformal</pd:name>
+    <pd:description>Short (single-line) description of project</pd:description>
+    <pd:homepage>http://www.morenaments.de/conformal</pd:homepage>
+  </pd:info>
+
+  <pd:license key="gpl" version="3.0" later="yes"/>
+  <pd:api version="1.5"/>
+
+  <pd:ui>
+    <pd:cli class="net.von_gagern.martin.morenaments.conformal.CommandLine"/>
+  </pd:ui>
+
+  <pd:tests>
+    <pd:junit version="4"/>
+  </pd:tests>
+
+  <pd:style>
+    <pd:check/>
+    <pd:imports>
+      <pd:package-group name="java">
+        <pd:jfc-packages/>
+      </pd:package-group>
+      <pd:package-group name="other">
+        <pd:other-packages/>
+      </pd:package-group>
+      <pd:package-group name="my own software">
+        <pd:regexp-packages>gagern</pd:regexp-packages>
+      </pd:package-group>
+      <pd:package-group name="related modules">
+        <pd:package>de.morenaments</pd:package>
+      </pd:package-group>
+      <pd:package-group name="current modules">
+        <pd:package>net.von_gagern.martin.morenaments.conformal</pd:package>
+      </pd:package-group>
+    </pd:imports>
+  </pd:style>
+
+</pd:project>
