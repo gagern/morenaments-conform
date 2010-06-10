@@ -5,7 +5,7 @@
   <info organisation="de.morenaments" module="conformal">
     <license name="GNU General Public License Version 3"
              url="http://www.gnu.org/licenses/gpl-3.0.html"/>
-    <description homepage="http://www.morenaments.de/conformal">Short (single-line) description of project</description>
+    <description homepage="http://www.morenaments.de/conformal">Hyperbolization of ornaments via discrete conformal maps</description>
     <doclink:package-list>
       <!-- Placeholder element, to be filled out during delivery -->
     </doclink:package-list>
@@ -87,6 +87,10 @@
     <dependency org="net.von-gagern.martin"
                 name="ant-doclink"
                 rev="1.0.0"
+                conf="ant"/>
+    <dependency org="net.von-gagern.martin"
+                name="ant-misc"
+                rev="latest.milestone"
                 conf="ant"/>
     <dependency org="net.von-gagern.martin.morenaments"
                 name="hyp"

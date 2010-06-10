@@ -5,7 +5,7 @@
          name="conformal"
          default="build">
 
-  <description>Short (single-line) description of project</description>
+  <description>Hyperbolization of ornaments via discrete conformal maps</description>
 
   <!--
     - ======================================================================
@@ -139,7 +139,6 @@
       own copy. In this case, we want to keep the ivy directory local
       as well, so that we don't put any files outside our source tree.
     -->
-    <echo level="info" message="Loading local ivy instance"/>
     <property name="ivy.default.ivy.user.dir" value="${basedir}/ivy"/>
     <taskdef resource="org/apache/ivy/ant/antlib.xml"
              uri="antlib:org.apache.ivy.ant">
@@ -152,8 +151,6 @@
   <target name="ivy.config.local"
           depends="ivy.check,ivy.load"
           if="ivy.settings.file">
-    <echo level="info"
-          message="Loading Ivy settings from ${ivy.settings.file}"/>
     <ivy:configure file="${ivy.settings.file}"/>
   </target>
 
@@ -340,8 +337,15 @@
     </path>
   </target>
 
+  <target name="init.antmisc">
+    <typedef resource="net/von_gagern/martin/ant/misc/antlib.xml"
+             uri="http://martin.von-gagern.net/projects/ant/">
+      <classpath refid="path.ant"/>
+    </typedef>
+  </target>
+
   <target name="compile"
-          depends="compile.classes,compile.resources"
+          depends="compile.classes,compile.resources,compile.nativelibs"
           description="Compile Java sources (no deps, quick)"/>
 
   <target name="compile.init">
@@ -371,6 +375,15 @@
     <copy todir="${dir.target}/classes">
       <fileset dir="src/main/resources"/>
     </copy>
+  </target>
+
+  <target name="compile.nativelibs" depends="init.antmisc">
+    <mkdir dir="${dir.target}/dlls"/>
+    <mvg:jnlpNativelibUnpack dir="${dir.target}/dlls">
+      <jnlp dir="lib">
+        <include name="optrun/jnlps/**/*.jnlp"/>
+      </jnlp>
+    </mvg:jnlpNativelibUnpack>
   </target>
 
   <!--
