@@ -124,12 +124,12 @@ class HypEdgePos {
      * @return a reference to this transformation
      */
     public HypEdgePos assignTranslation(double d) {
-	if (Double.isInfinite(d))
-	    assign(d > 0 ? 1. : -1., 0., 1., 0.);
-	else
-	    assign(Math.expm1(d), 0., Math.exp(d) + 1., 0.);
+        if (Double.isInfinite(d))
+            assign(d > 0 ? 1. : -1., 0., 1., 0.);
+        else
+            assign(Math.expm1(d), 0., Math.exp(d) + 1., 0.);
         normalize();
-	return this;
+        return this;
     }
 
     /**
@@ -146,16 +146,16 @@ class HypEdgePos {
     public HypEdgePos assignRotation(double phi) {
         double arg = phi/-2.;
         assign(0., 0., Math.cos(arg), Math.sin(arg));
-	return this;
+        return this;
     }
 
     public HypEdgePos assignTransRot(double d) {
-	if (Double.isInfinite(d))
-	    assign(0., d > 0 ? 1. : -1., 0., 1.);
-	else
-	    assign(0., Math.expm1(d), 0., Math.exp(d) + 1.);
+        if (Double.isInfinite(d))
+            assign(0., d > 0 ? 1. : -1., 0., 1.);
+        else
+            assign(0., Math.expm1(d), 0., Math.exp(d) + 1.);
         normalize();
-	return this;
+        return this;
     }
 
     @Override public String toString() {

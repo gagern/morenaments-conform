@@ -45,11 +45,11 @@ public abstract class Group implements Cloneable {
     private AffineTransform euclideanTransform;
 
     protected Group(int[] euclideanAngles) {
-	this.euclideanAngles = euclideanAngles;
+        this.euclideanAngles = euclideanAngles;
     }
 
     public int[] getEuclideanAngles() {
-	return euclideanAngles;
+        return euclideanAngles;
     }
 
     public void setEuclideanTransform(AffineTransform tr) {
@@ -61,13 +61,13 @@ public abstract class Group implements Cloneable {
     }
 
     public boolean checkHyperbolicAngles(int[] hyperbolicAngles) {
-	return true;
+        return true;
     }
 
     public void setHyperbolicAngles(int[] hyperbolicAngles) {
-	if (!checkHyperbolicAngles(hyperbolicAngles))
-	    throw new IllegalArgumentException("Invalid hyperbolic angles");
-	this.hyperbolicAngles = hyperbolicAngles;
+        if (!checkHyperbolicAngles(hyperbolicAngles))
+            throw new IllegalArgumentException("Invalid hyperbolic angles");
+        this.hyperbolicAngles = hyperbolicAngles;
         insidenessChecks = null;
         generators = null;
     }

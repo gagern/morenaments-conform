@@ -65,9 +65,9 @@ class EucHooks extends Hooks {
     @Override public void recognizedImage(de.tum.in.gagern.ornament.Group group,
                                           int ax, int ay, int bx, int by,
                                           BufferedImage median) {
-	Group g;
-	try {
-	    g = (Group)Group.class.getMethod(group.getName()).invoke(null);
+        Group g;
+        try {
+            g = (Group)Group.class.getMethod(group.getName()).invoke(null);
         }
         catch (Exception e) {
             System.err.println(e);

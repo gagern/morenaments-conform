@@ -97,11 +97,12 @@ public class TilingRenderer {
             if (px*px + py*py > 1) return;
             v.assign(px, py, 1, 0);
             try {
-                ts[i] = t = findTrafo(v, ts[i], t, false);
+                t = findTrafo(v, ts[i], t, false);
             }
             catch (InfiniteLoopException e) {
-                ts[i] = t = findTrafo(v, ts[i], t, true);
+                t = findTrafo(v, ts[i], t, true);
             }
+            ts[i] = t;
             target.setRGB(x + r, y + r, getColor(t, v));
             x += dx;
             y += dy;

@@ -91,15 +91,15 @@ class OpenGlRpl implements GLEventListener,
     private static final float grayLevel = 12.f/15.f;
     private float[] background = { grayLevel, grayLevel, grayLevel, 1.0f };
     private float[] aaPositions = {
-	-1/3.f, -1/3.f,
-	1/3.f, 1/3.f,
-	-1/3.f, 1/3.f,
-	1/3.f, -1/3.f,
-	0, 0,
-	-1/4.f, 0,
-	1/4.f, 0,
-	0, -1/4.f,
-	0, 1/4.f,
+        -1/3.f, -1/3.f,
+        1/3.f, 1/3.f,
+        -1/3.f, 1/3.f,
+        1/3.f, -1/3.f,
+        0, 0,
+        -1/4.f, 0,
+        1/4.f, 0,
+        0, -1/4.f,
+        0, 1/4.f,
     };
     private int maxTextureSize;
     private static final HypTrafo flipReal =
@@ -273,20 +273,20 @@ class OpenGlRpl implements GLEventListener,
         g2d.dispose();
         Buffer data = ByteBuffer.wrap(array);
 
-	int[] intBuf = new int[1];
-	gl.glGenTextures(1, intBuf, 0);
-	texName = intBuf[0];
-	gl.glBindTexture(GL_TEXTURE_2D, texName);
+        int[] intBuf = new int[1];
+        gl.glGenTextures(1, intBuf, 0);
+        texName = intBuf[0];
+        gl.glBindTexture(GL_TEXTURE_2D, texName);
 
-	gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 
-			   GL_NEAREST);
-	gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
-			   GL_NEAREST);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                           GL_NEAREST);
+        gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                           GL_NEAREST);
         // gl.glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ow, oh, 
-			0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ow, oh,
+                        0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     }
 
     private static String loadSource(String name) {
@@ -326,66 +326,66 @@ class OpenGlRpl implements GLEventListener,
         String[] fSrc = { "fsRpl.gls" };
         for (int i = 0; i < fSrc.length; ++i)
             fSrc[i] = getSource(fSrc[i]);
-	int[] intBuf = new int[1];
-	int shader = si.createFragmentShader();
+        int[] intBuf = new int[1];
+        int shader = si.createFragmentShader();
         si.shaderSource(shader, fSrc.length, fSrc);
         si.compileShader(shader);
 
-	// get log message
+        // get log message
         int logLength = si.getShaderInfoLogLength(shader);
-	byte[] logBytes = new byte[logLength + 1];
-	si.getShaderInfoLog(shader, logBytes.length, intBuf, 0, logBytes, 0);
-	if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
-	String log = new String(logBytes, 0, intBuf[0]);
-	if (!"".equals(log)) {
+        byte[] logBytes = new byte[logLength + 1];
+        si.getShaderInfoLog(shader, logBytes.length, intBuf, 0, logBytes, 0);
+        if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
+        String log = new String(logBytes, 0, intBuf[0]);
+        if (!"".equals(log)) {
             logger.info("Fragment shader log:");
             logger.info(log);
-	}
-	
-	// check compilation status
-        int status = si.getShaderCompileStatus(shader);
-	if (status != GL_TRUE)
-	    throw new RuntimeException("Error compiling shader");
+        }
 
-	// link program
-	shaderProgram = si.createProgram();
-	si.attachShader(shaderProgram, shader);
+        // check compilation status
+        int status = si.getShaderCompileStatus(shader);
+        if (status != GL_TRUE)
+            throw new RuntimeException("Error compiling shader");
+
+        // link program
+        shaderProgram = si.createProgram();
+        si.attachShader(shaderProgram, shader);
 
         uniLocCache.clear();
         si.linkProgram(shaderProgram);
-	// get log message
+        // get log message
         logLength = si.getProgramInfoLogLength(shaderProgram);
-	logBytes = new byte[logLength + 1];
+        logBytes = new byte[logLength + 1];
         si.getProgramInfoLog(shaderProgram, logBytes.length,
                              intBuf, 0, logBytes, 0);
-	if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
-	log = new String(logBytes, 0, intBuf[0]);
-	if (!"".equals(log)) {
+        if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
+        log = new String(logBytes, 0, intBuf[0]);
+        if (!"".equals(log)) {
             logger.info("Shader program log:");
             logger.info(log);
-	}
+        }
 
-	if (si.getLinkStatus(shaderProgram) != GL_TRUE)
-	    throw new RuntimeException("Error linking shader");
+        if (si.getLinkStatus(shaderProgram) != GL_TRUE)
+            throw new RuntimeException("Error linking shader");
 
         si.validateProgram(shaderProgram);
-	if (si.getValidateStatus(shaderProgram) != GL_TRUE)
-	    throw new RuntimeException("Error validating shader");
+        if (si.getValidateStatus(shaderProgram) != GL_TRUE)
+            throw new RuntimeException("Error validating shader");
 
-	// get log message
+        // get log message
         logLength = si.getProgramInfoLogLength(shaderProgram);
-	logBytes = new byte[logLength + 1];
+        logBytes = new byte[logLength + 1];
         si.getProgramInfoLog(shaderProgram, logBytes.length,
                              intBuf, 0, logBytes, 0);
-	if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
-	log = new String(logBytes, 0, intBuf[0]);
-	if (!"".equals(log)) {
+        if (intBuf[0] > 0 && logBytes[intBuf[0]] == 0) --intBuf[0];
+        log = new String(logBytes, 0, intBuf[0]);
+        if (!"".equals(log)) {
             logger.info("Shader program log:");
             logger.info(log);
-	}
+        }
 
-	si.useProgram(shaderProgram);
-	si.uniform1i(uniLoc(si, "texSampler"), 0);
+        si.useProgram(shaderProgram);
+        si.uniform1i(uniLoc(si, "texSampler"), 0);
         si.uniform4fv(uniLoc(si, "bgColor"), 1, background, 0);
         draftQuality(si, currentDraft);
         initialTrafo(si, currentInitialTrafo);
@@ -429,14 +429,14 @@ class OpenGlRpl implements GLEventListener,
             vec4ForHypTrafo(gen, gm, i<<2);
             gp[i] = gen.doConj ? -1.f : 1.f;
         }
-	si.uniform1i(uniLoc(si, "numGenerators"), n);
+        si.uniform1i(uniLoc(si, "numGenerators"), n);
         si.uniform4fv(uniLoc(si, "insidenessChecks"), n, ic, 0);
-	si.uniform4fv(uniLoc(si, "genMatrix"), n, gm, 0);        
+        si.uniform4fv(uniLoc(si, "genMatrix"), n, gm, 0);
         si.uniform1fv(uniLoc(si, "genParity"), n, gp, 0);
     }
 
     public void display(GLAutoDrawable drawable) {
-	GL gl = drawable.getGL();
+        GL gl = drawable.getGL();
         ShaderInterface si = getShaderInterface(gl);
         if (updateViewport || intendedZoomStep != currentZoomStep)
             setupViewport(gl, si, cmp.getWidth(), cmp.getHeight());
@@ -446,24 +446,24 @@ class OpenGlRpl implements GLEventListener,
             initialTrafo(si, intendedInitialTrafo);
             intendedInitialTrafo = null;
         }
-	gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	gl.glEnable(GL_TEXTURE_2D);
+        gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        gl.glEnable(GL_TEXTURE_2D);
 
-	gl.glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-	gl.glBindTexture(GL_TEXTURE_2D, texName);
-	gl.glBegin(GL_QUADS);
-	gl.glTexCoord2f(-1.0f, -1.0f); gl.glVertex3f(-1.0f, -1.0f, 0.0f);
-	gl.glTexCoord2f(-1.0f, 1.0f); gl.glVertex3f(-1.0f, 1.0f, 0.0f);
-	gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f(1.0f, 1.0f, 0.0f);
-	gl.glTexCoord2f(1.0f, -1.0f); gl.glVertex3f(1.0f, -1.0f, 0.0f);
-	gl.glEnd();
-	gl.glFlush();
-	gl.glDisable(GL_TEXTURE_2D);
+        gl.glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+        gl.glBindTexture(GL_TEXTURE_2D, texName);
+        gl.glBegin(GL_QUADS);
+        gl.glTexCoord2f(-1.0f, -1.0f); gl.glVertex3f(-1.0f, -1.0f, 0.0f);
+        gl.glTexCoord2f(-1.0f, 1.0f); gl.glVertex3f(-1.0f, 1.0f, 0.0f);
+        gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex3f(1.0f, 1.0f, 0.0f);
+        gl.glTexCoord2f(1.0f, -1.0f); gl.glVertex3f(1.0f, -1.0f, 0.0f);
+        gl.glEnd();
+        gl.glFlush();
+        gl.glDisable(GL_TEXTURE_2D);
     }
 
     public void reshape(GLAutoDrawable drawable,
                         int x, int y, int width, int height) {
-	GL gl = drawable.getGL();
+        GL gl = drawable.getGL();
         useDraft = width*height > 512*512;
         setupViewport(gl, getShaderInterface(gl), width, height);
         triggerDraft();
@@ -475,8 +475,8 @@ class OpenGlRpl implements GLEventListener,
 
     private void setupViewport(GL gl, ShaderInterface si,
                                int width, int height) {
-	gl.glMatrixMode(GL_PROJECTION);
-	gl.glLoadIdentity();
+        gl.glMatrixMode(GL_PROJECTION);
+        gl.glLoadIdentity();
         double w, h;
         if (width < height) {
             w = 1;
@@ -498,24 +498,24 @@ class OpenGlRpl implements GLEventListener,
         if (hz >= 1.) center.y = 0.;
         else center.y = clamp(hz - 1., center.y, 1. - hz);
         double cx = center.x, cy = center.y;
-	gl.glOrtho(cx-wz, cx+wz, cy+hz, cy-hz, 0., 1.);
+        gl.glOrtho(cx-wz, cx+wz, cy+hz, cy-hz, 0., 1.);
 
-	final int n = aaPositions.length/2;
+        final int n = aaPositions.length/2;
         float[] aaOffsets = new float[n*3];
         float basicOffset = (float)pixelSize;
         int i = 0;
-	for (int j = 0; j < aaPositions.length; j += 2) {
-	    aaOffsets[i++] = basicOffset*aaPositions[j];
-	    aaOffsets[i++] = basicOffset*aaPositions[j+1];
-	    aaOffsets[i++] = 1.f;
-	}
+        for (int j = 0; j < aaPositions.length; j += 2) {
+            aaOffsets[i++] = basicOffset*aaPositions[j];
+            aaOffsets[i++] = basicOffset*aaPositions[j+1];
+            aaOffsets[i++] = 1.f;
+        }
         si.uniform3fv(uniLoc(si, "aaOffsets"), n, aaOffsets, 0);
     }
 
     public void displayChanged(GLAutoDrawable drawable,
-			       boolean modeChanged,
-			       boolean deviceChanged) {
-	GL gl = drawable.getGL();
+                               boolean modeChanged,
+                               boolean deviceChanged) {
+        GL gl = drawable.getGL();
     }
 
     private int uniLoc(ShaderInterface si, String name) {
@@ -534,8 +534,8 @@ class OpenGlRpl implements GLEventListener,
     }
 
     private void draftQuality(ShaderInterface si, boolean draft) {
-	si.uniform1i(uniLoc(si, "numAaOffsets"), draft ? 4 : 9);
-	si.uniform1i(uniLoc(si, "maxPathLength"), draft ? 32 : 128);
+        si.uniform1i(uniLoc(si, "numAaOffsets"), draft ? 4 : 9);
+        si.uniform1i(uniLoc(si, "maxPathLength"), draft ? 32 : 128);
         currentDraft = draft;
     }
 

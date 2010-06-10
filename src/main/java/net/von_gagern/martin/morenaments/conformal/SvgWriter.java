@@ -45,7 +45,7 @@ class SvgWriter {
         "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd";
 
     private static final String DOCTYPE =
-        "<!DOCTYPE svg PUBLIC \"" + PUBLIC + "\" \"" + SYSTEM + "\">"; 
+        "<!DOCTYPE svg PUBLIC \"" + PUBLIC + "\" \"" + SYSTEM + "\">";
 
     private static final String VERSION = "1.1";
 

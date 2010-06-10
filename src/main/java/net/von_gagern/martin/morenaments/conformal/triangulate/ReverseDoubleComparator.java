@@ -23,7 +23,7 @@ import java.util.Comparator;
 
 abstract class ReverseDoubleComparator<T> implements Comparator<T> {
 
-    abstract protected double getValue(T o);
+    protected abstract double getValue(T o);
 
     public int compare(T o1, T o2) {
         double v1 = getValue(o1);
@@ -35,6 +35,10 @@ abstract class ReverseDoubleComparator<T> implements Comparator<T> {
 
     public boolean equals(Object o) {
         return o != null && getClass().equals(o.getClass());
+    }
+
+    public int hashCode() {
+        return getClass().hashCode();
     }
 
 }

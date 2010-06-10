@@ -317,10 +317,11 @@ public class GUI extends JDesktopPane {
             registry = DOMImplementationRegistry.newInstance();
             DOMImplementation impl = registry.getDOMImplementation("XML 3.0");
             Document doc = impl.createDocument(null, STD_METADATA_FORMAT, null);
-            Element root, text, entry;
-            root = doc.getDocumentElement();
-            root.appendChild(text = doc.createElement("Text"));
-            text.appendChild(entry = doc.createElement("TextEntry"));
+            Element root = doc.getDocumentElement();
+            Element text = doc.createElement("Text");
+            Element entry = doc.createElement("TextEntry");
+            root.appendChild(text);
+            text.appendChild(entry);
             entry.setAttribute("keyword", "Comment");
             entry.setAttribute("value", comment);
             // The following three are necessary to avoid a Java VM bug:
@@ -409,13 +410,13 @@ public class GUI extends JDesktopPane {
     private void openGlRpl() {
         Group g = queryGroup(false);
         BufferedImage img = currentImageDisplay.getImage();
-	JFrame frm = new JFrame("OpenGlRpl");
-	GLCapabilities capa = new GLCapabilities();
+        JFrame frm = new JFrame("OpenGlRpl");
+        GLCapabilities capa = new GLCapabilities();
         OpenGlRpl ogrpl = new OpenGlRpl(img, g);
-	frm.getContentPane().add(ogrpl.getComponent());
-	frm.setSize(500, 500);
-	frm.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-	frm.setVisible(true);
+        frm.getContentPane().add(ogrpl.getComponent());
+        frm.setSize(500, 500);
+        frm.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frm.setVisible(true);
     }
 
     public int getImageSize() {
@@ -429,7 +430,7 @@ public class GUI extends JDesktopPane {
     }
 
     private class HypTileTask extends Work {
-        
+
         private final String title;
         private final BufferedImage inImg;
         private final Group g;
@@ -465,7 +466,7 @@ public class GUI extends JDesktopPane {
     }
 
     private class TilingTask extends Work {
-        
+
         private final String title;
         private final BufferedImage inImg;
         private final Group g;
@@ -503,7 +504,7 @@ public class GUI extends JDesktopPane {
     }
 
     private class GridTask extends Work {
-        
+
         private final String title;
         private final Group g;
         private final int size;
@@ -533,7 +534,7 @@ public class GUI extends JDesktopPane {
     }
 
     private class TileExtractTask extends Work {
-        
+
         private final String title;
         private final BufferedImage inImg;
         private final Group g;

@@ -46,8 +46,10 @@ class GridRenderer extends TilingRenderer {
     }
 
     public BufferedImage render(int size, BufferedImage target) {
-        minEucDist = minHypDist = Double.POSITIVE_INFINITY;
-        maxEucDist = maxHypDist = Double.NEGATIVE_INFINITY;
+        minEucDist = Double.POSITIVE_INFINITY;
+        maxEucDist = Double.NEGATIVE_INFINITY;
+        minHypDist = Double.POSITIVE_INFINITY;
+        maxHypDist = Double.NEGATIVE_INFINITY;
         target = super.render(null, size, target);
         logger.debug("hyp dist: " + minHypDist + " -- " + maxHypDist);
         logger.debug("euc dist: " + minEucDist + " -- " + maxEucDist);

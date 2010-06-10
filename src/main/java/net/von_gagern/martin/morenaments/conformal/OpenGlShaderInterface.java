@@ -76,7 +76,7 @@ class OpenGlShaderInterface extends ShaderInterface {
     }
 
     @Override public void linkProgram(int program) {
-	gl.glLinkProgram(program);
+        gl.glLinkProgram(program);
     }
 
     @Override public int getProgramInfoLogLength(int program) {
@@ -96,7 +96,7 @@ class OpenGlShaderInterface extends ShaderInterface {
     }
 
     @Override public void validateProgram(int program) {
-	gl.glValidateProgram(program);
+        gl.glValidateProgram(program);
     }
 
     @Override public int getValidateStatus(int program) {
@@ -108,22 +108,22 @@ class OpenGlShaderInterface extends ShaderInterface {
     }
 
     @Override public void uniform1i(int location, int i1) {
-	gl.glUniform1i(location, i1);
+        gl.glUniform1i(location, i1);
     }
 
     @Override public void uniform1fv(int location, int count,
                                      float[] value, int value_offset) {
-	gl.glUniform1fv(location, count, value, value_offset);
+        gl.glUniform1fv(location, count, value, value_offset);
     }
 
     @Override public void uniform3fv(int location, int count,
                                      float[] value, int value_offset) {
-	gl.glUniform3fv(location, count, value, value_offset);
+        gl.glUniform3fv(location, count, value, value_offset);
     }
 
     @Override public void uniform4fv(int location, int count,
                                      float[] value, int value_offset) {
-	gl.glUniform4fv(location, count, value, value_offset);
+        gl.glUniform4fv(location, count, value, value_offset);
     }
 
     @Override public int getUniformLocation(int program, String name) {

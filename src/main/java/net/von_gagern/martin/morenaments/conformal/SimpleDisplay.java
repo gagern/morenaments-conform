@@ -19,9 +19,16 @@
 
 package net.von_gagern.martin.morenaments.conformal;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.Transparency;
 import java.awt.image.BufferedImage;
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
 import net.von_gagern.martin.morenaments.conformal.groups.Group;
 
 class SimpleDisplay extends JPanel {

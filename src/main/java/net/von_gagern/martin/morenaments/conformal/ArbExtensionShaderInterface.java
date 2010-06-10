@@ -70,7 +70,7 @@ class ArbExtensionShaderInterface extends ShaderInterface {
     }
 
     @Override public void linkProgram(int program) {
-	gl.glLinkProgramARB(program);
+        gl.glLinkProgramARB(program);
     }
 
     @Override public int getProgramInfoLogLength(int program) {
@@ -90,7 +90,7 @@ class ArbExtensionShaderInterface extends ShaderInterface {
     }
 
     @Override public void validateProgram(int program) {
-	gl.glValidateProgramARB(program);
+        gl.glValidateProgramARB(program);
     }
 
     @Override public int getValidateStatus(int program) {
@@ -102,22 +102,22 @@ class ArbExtensionShaderInterface extends ShaderInterface {
     }
 
     @Override public void uniform1i(int location, int i1) {
-	gl.glUniform1iARB(location, i1);
+        gl.glUniform1iARB(location, i1);
     }
 
     @Override public void uniform1fv(int location, int count,
                                      float[] value, int value_offset) {
-	gl.glUniform1fvARB(location, count, value, value_offset);
+        gl.glUniform1fvARB(location, count, value, value_offset);
     }
 
     @Override public void uniform3fv(int location, int count,
                                      float[] value, int value_offset) {
-	gl.glUniform3fvARB(location, count, value, value_offset);
+        gl.glUniform3fvARB(location, count, value, value_offset);
     }
 
     @Override public void uniform4fv(int location, int count,
                                      float[] value, int value_offset) {
-	gl.glUniform4fvARB(location, count, value, value_offset);
+        gl.glUniform4fvARB(location, count, value, value_offset);
     }
 
     @Override public int getUniformLocation(int program, String name) {

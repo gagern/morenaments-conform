@@ -21,8 +21,8 @@ package net.von_gagern.martin.morenaments.conformal.triangulate;
 
 import net.von_gagern.martin.getopt.OptArg;
 import net.von_gagern.martin.getopt.OptKey;
+
 import static net.von_gagern.martin.getopt.OptArg.NONE;
-import static net.von_gagern.martin.getopt.OptArg.OPTIONAL;
 import static net.von_gagern.martin.getopt.OptArg.REQUIRED;
 
 enum CommandLineOption implements OptKey {

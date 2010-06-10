@@ -28,7 +28,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -80,7 +79,8 @@ public class TileTransformer implements Runnable {
             hypCorners.add(new Vertex(corner));
         if (hypMesh != null) {
             dumpTriangles("hypMesh", hypMesh);
-            lastUsedTriangle = centerTriangle = findCenter(hypMesh);
+            centerTriangle = findCenter(hypMesh);
+            lastUsedTriangle = centerTriangle;
             if (logger.isTraceEnabled())
                 dumpTriangles("hypMeshes", hypMesh, g.getGenerators());
             return;
@@ -92,7 +92,8 @@ public class TileTransformer implements Runnable {
         hypMesh.triangulatePoincareVertices(hypCorners);
         dumpTriangles("hypMesh", hypMesh);
         logger.debug("Finding center");
-        lastUsedTriangle = centerTriangle = findCenter(hypMesh);
+        centerTriangle = findCenter(hypMesh);
+        lastUsedTriangle = centerTriangle;
 
         // Transform mesh to euclidean shape using discrete conformal map
         logger.debug("Transforming hyperbolic mesh");
@@ -304,7 +305,8 @@ public class TileTransformer implements Runnable {
             if (t1 == t2) break;
             if (t2 == null) {
                 if (lastUsedTriangle != centerTriangle) {
-                    t2 = lastUsedTriangle = centerTriangle; // fall back
+                    lastUsedTriangle = centerTriangle; // fall back
+                    t2 = centerTriangle;
                 }
                 else {
                     logger.warn("Dealing with pixel " + in +

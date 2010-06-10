@@ -42,7 +42,7 @@ import static java.awt.GridBagConstraints.REMAINDER;
 class AngleCountsDlg extends JDialog {
 
     private JPanel anglePanel;
-    
+
     private GridBagConstraints gbcLabel, gbcSpinner;
 
     private SpinnerNumberModel[] spinnerModels;

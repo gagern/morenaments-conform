@@ -28,11 +28,11 @@ abstract class Work implements Runnable {
     private final BusyFeedback busy;
 
     public Work(BusyFeedback busy) {
-	this.busy = busy;
+        this.busy = busy;
     }
 
     public Work() {
-	this(null);
+        this(null);
     }
 
     protected abstract void doInBackground() throws Exception;
@@ -40,29 +40,29 @@ abstract class Work implements Runnable {
     protected void done() { }
 
     protected void exception(Exception e) {
-	e.printStackTrace();
+        e.printStackTrace();
     }
 
     public void run() {
-	if (busy != null) busy.start();
-	try {
-	    doInBackground();
-	    SwingUtilities.invokeLater(new Runnable() {
-		    public void run() {
-			done();
-		    }
-		});
-	}
-	catch (final Exception e) {
-	    SwingUtilities.invokeLater(new Runnable() {
-		    public void run() {
-			exception(e);
-		    }
-		});
-	}
-	finally {
-	    if (busy != null) busy.finish();
-	}
+        if (busy != null) busy.start();
+        try {
+            doInBackground();
+            SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        done();
+                    }
+                });
+        }
+        catch (final Exception e) {
+            SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        exception(e);
+                    }
+                });
+        }
+        finally {
+            if (busy != null) busy.finish();
+        }
     }
 
 }
