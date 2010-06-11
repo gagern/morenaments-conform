@@ -103,7 +103,7 @@
   </target>
 
   <target name="ivy.get" depends="ivy.check" unless="ivy.downloaded">
-    <property name="ivy.get.version" value="2.0.0"/>
+    <property name="ivy.get.version" value="2.1.0"/>
     <property name="ivy.get.mirror" value="http://www.apache.org/dist"/>
     <property name="ivy.get.dir" value="ant/ivy/${ivy.get.version}"/>
     <property name="ivy.get.file"
@@ -143,7 +143,10 @@
     <taskdef resource="org/apache/ivy/ant/antlib.xml"
              uri="antlib:org.apache.ivy.ant">
       <classpath>
-        <fileset dir="lib" includes="ant/jars/**/*.jar"/>
+        <fileset dir="lib">
+          <include name="ant/jars/**/*.jar"/>
+          <include name="ant/bundles/**/*.jar"/>
+        </fileset>
       </classpath>
     </taskdef>
   </target>
@@ -305,26 +308,40 @@
 
   <target name="init.paths">
     <path id="path.ant">
-      <fileset dir="lib" includes="ant/jars/**/*.jar"/>
+      <fileset dir="lib">
+        <include name="ant/jars/**/*.jar"/>
+        <include name="ant/bundles/**/*.jar"/>
+      </fileset>
     </path>
     <path id="path.src">
       <pathelement location="src/main/java"/>
       <pathelement location="${dir.target}/java"/>
     </path>
     <path id="path.boot">
-      <fileset dir="lib" includes="boot/jars/**/*.jar"/>
+      <fileset dir="lib">
+        <include name="boot/jars/**/*.jar"/>
+        <include name="boot/bundles/**/*.jar"/>
+      </fileset>
     </path>
     <path id="path.compile">
-      <fileset dir="lib" includes="cdep/jars/**/*.jar"/>
+      <fileset dir="lib">
+        <include name="cdep/jars/**/*.jar"/>
+        <include name="cdep/bundles/**/*.jar"/>
+      </fileset>
     </path>
     <path id="path.optrun">
-      <fileset dir="lib" includes="optrun/jars/**/*.jar"/>
+      <fileset dir="lib">
+        <include name="optrun/jars/**/*.jar"/>
+        <include name="optrun/bundles/**/*.jar"/>
+      </fileset>
     </path>
     <path id="path.tests.compile">
       <pathelement location="${dir.target}/classes"/>
       <fileset dir="lib">
         <include name="test/jars/**/*.jar"/>
+        <include name="test/bundles/**/*.jar"/>
         <include name="cdep/jars/**/*.jar"/>
+        <include name="cdep/bundles/**/*.jar"/>
       </fileset>
     </path>
     <path id="path.tests.run">
@@ -332,7 +349,9 @@
       <pathelement location="${dir.target}/classes"/>
       <fileset dir="lib">
         <include name="test/jars/**/*.jar"/>
+        <include name="test/bundles/**/*.jar"/>
         <include name="optrun/jars/**/*.jar"/>
+        <include name="optrun/bundles/**/*.jar"/>
       </fileset>
     </path>
   </target>
@@ -534,7 +553,10 @@
     <java classname="${run.class}" fork="true" maxmemory="${run.maxmemory}">
       <classpath>
         <pathelement location="${dir.target}/classes"/>
-        <fileset dir="lib" includes="optrun/jars/**/*.jar"/>
+        <fileset dir="lib">
+          <include name="optrun/jars/**/*.jar"/>
+          <include name="optrun/bundles/**/*.jar"/>
+        </fileset>
       </classpath>
       <sysproperty key="java.library.path" path="${run.dll.path}"/>
       <assertions>
