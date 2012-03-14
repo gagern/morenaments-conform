@@ -43,16 +43,16 @@
   </target>
 
   <target name="distclean"
+          depends="clean"
           description="Delete generated files and retrieved dependencies">
-    <delete dir="${dir.target}"/>
     <delete dir="lib"/>
     <delete dir="ivy"/>
   </target>
 
-  <target name="main"
-          depends="jar"
-          description="Build main artifact (no deps, quick)"/>
-  <target name="build" depends="deps,main" description="Build main artifact"/>
+  <target name="main" depends="jar" description="Build main artifact"/>
+  <target name="build"
+          depends="deps,main"
+          description="Resolve deps and build main artifact"/>
 
   <target name="rebuild"
           depends="clean"
@@ -62,7 +62,21 @@
 
   <target name="all"
           depends="deps,artifacts"
-          description="Build all artifacts"/>
+          description="Resolve deps and build all artifacts"/>
+
+  <target name="offline"
+          description="Prevent network access in subsequent targets">
+    <fail if="net.online" message="It is too late for offline mode"/>
+    <property name="net.offline" value="true"/>
+  </target>
+
+  <macrodef name="require-online"
+            uri="http://martin.von-gagern.net/projects/ant/">
+    <sequential>
+      <fail if="net.offline" message="Network access required"/>
+      <property name="net.online" value="true"/>
+    </sequential>
+  </macrodef>
 
   <!--
     - ======================================================================
@@ -103,8 +117,9 @@
   </target>
 
   <target name="ivy.get" depends="ivy.check" unless="ivy.downloaded">
-    <property name="ivy.get.version" value="2.1.0"/>
-    <property name="ivy.get.mirror" value="http://www.apache.org/dist"/>
+    <mvg:require-online/>
+    <property name="ivy.get.version" value="2.2.0"/>
+    <property name="ivy.get.mirror" value="http://archive.apache.org/dist"/>
     <property name="ivy.get.dir" value="ant/ivy/${ivy.get.version}"/>
     <property name="ivy.get.file"
               value="apache-ivy-${ivy.get.version}-bin-with-deps.zip"/>
@@ -160,12 +175,14 @@
   <target name="ivy.config.public"
           depends="ivy.check,ivy.load"
           unless="ivy.settings.file">
+    <mvg:require-online/>
     <ivy:configure url="http://martin.von-gagern.net/ivy/ivysettings1.xml"/>
   </target>
 
   <target name="ivy.config" depends="ivy.config.local,ivy.config.public"/>
 
   <target name="ivy.resolve" depends="ivy.config">
+    <mvg:require-online/>
     <ivy:resolve conf="*" transitive="true"/>
   </target>
 
@@ -178,6 +195,28 @@
       pattern="lib/[conf]/[type]s/[organization]/[module]/[artifact].[ext]"
       ivypattern="lib/[conf]/[type]s/[organization]/[module].[ext]"
       symlink="${ivy.symlink}"/>
+    <mkdir dir="${dir.target}"/>
+    <touch file="${dir.target}/deps.stamp"/>
+  </target>
+
+  <target name="deps.quick.check">
+    <condition property="deps.skip">
+      <and>
+        <available file="lib"/>
+        <uptodate targetfile="${dir.target}/deps.stamp">
+          <srcresources>
+            <filelist dir=".">
+              <file name="ivy.xml"/>
+            </filelist>
+          </srcresources>
+        </uptodate>
+      </and>
+    </condition>
+  </target>
+
+  <target name="deps.quick.get" depends="deps.quick.check" unless="deps.skip">
+    <echo level="info">Need to fetch latest dependencies.</echo>
+    <antcall target="deps"/>
   </target>
 
   <target name="ivy.report" depends="ivy.resolve,init.paths">
@@ -306,9 +345,10 @@
           depends="init.srcgen"
           description="Generate additional Java source files"/>
 
-  <target name="init.paths">
+  <target name="init.paths" depends="deps.quick.get">
     <path id="path.ant">
       <fileset dir="lib">
+        <include name="adhoc/**/*.jar"/>
         <include name="ant/jars/**/*.jar"/>
         <include name="ant/bundles/**/*.jar"/>
       </fileset>
@@ -325,12 +365,15 @@
     </path>
     <path id="path.compile">
       <fileset dir="lib">
+        <include name="adhoc/**/*.jar"/>
         <include name="cdep/jars/**/*.jar"/>
         <include name="cdep/bundles/**/*.jar"/>
       </fileset>
     </path>
     <path id="path.optrun">
+      <pathelement location="${dir.target}/classes"/>
       <fileset dir="lib">
+        <include name="adhoc/**/*.jar"/>
         <include name="optrun/jars/**/*.jar"/>
         <include name="optrun/bundles/**/*.jar"/>
       </fileset>
@@ -338,6 +381,7 @@
     <path id="path.tests.compile">
       <pathelement location="${dir.target}/classes"/>
       <fileset dir="lib">
+        <include name="adhoc/**/*.jar"/>
         <include name="test/jars/**/*.jar"/>
         <include name="test/bundles/**/*.jar"/>
         <include name="cdep/jars/**/*.jar"/>
@@ -348,6 +392,7 @@
       <pathelement location="${dir.target}/test/classes"/>
       <pathelement location="${dir.target}/classes"/>
       <fileset dir="lib">
+        <include name="adhoc/**/*.jar"/>
         <include name="test/jars/**/*.jar"/>
         <include name="test/bundles/**/*.jar"/>
         <include name="optrun/jars/**/*.jar"/>
@@ -356,7 +401,7 @@
     </path>
   </target>
 
-  <target name="init.antmisc">
+  <target name="init.antmisc" depends="init.paths">
     <typedef resource="net/von_gagern/martin/ant/misc/antlib.xml"
              uri="http://martin.von-gagern.net/projects/ant/">
       <classpath refid="path.ant"/>
@@ -365,7 +410,7 @@
 
   <target name="compile"
           depends="compile.classes,compile.resources,compile.nativelibs"
-          description="Compile Java sources (no deps, quick)"/>
+          description="Compile Java sources"/>
 
   <target name="compile.init">
     <mkdir dir="${dir.target}/classes"/>
@@ -489,6 +534,7 @@
       <formatter type="brief" usefile="false" unless="$"/>
       <batchtest todir="${dir.junit}/reports">
         <fileset dir="${dir.target}/test/classes">
+          <exclude name="**/*$$*.class"/>
           <include name="**/*Test*.class"/>
         </fileset>
       </batchtest>
@@ -523,7 +569,7 @@
           message="JUnit test report saved as ${tests.junit.index}"/>
   </target>
 
-  <target name="tests" depends="test" description="Run test cases (no deps)">
+  <target name="tests" depends="test" description="Run test cases">
     <fail message="Some tests failed" if="tests.failure"/>
     <echo level="info">All tests successful</echo>
   </target>
@@ -551,13 +597,7 @@
       </path>
     </pathconvert>
     <java classname="${run.class}" fork="true" maxmemory="${run.maxmemory}">
-      <classpath>
-        <pathelement location="${dir.target}/classes"/>
-        <fileset dir="lib">
-          <include name="optrun/jars/**/*.jar"/>
-          <include name="optrun/bundles/**/*.jar"/>
-        </fileset>
-      </classpath>
+      <classpath refid="path.optrun"/>
       <sysproperty key="java.library.path" path="${run.dll.path}"/>
       <assertions>
         <enable/>
@@ -608,7 +648,7 @@
 
   <target name="javadoc"
           depends="srcgen,init.paths"
-          description="Generate public API documentation (no deps)">
+          description="Generate public API documentation">
     <typedef resource="net/von_gagern/martin/ant/doclink/antlib.xml"
              uri="http://martin.von-gagern.net/projects/ant/">
       <classpath refid="path.ant"/>
@@ -674,10 +714,7 @@
 
   <target
     name="artifacts"
-    depends="artifact.jar,
-             artifact.source,
-             artifact.java-source,
-             artifact.javadoc"/>
+    depends="artifact.jar,artifact.source,artifact.java-source,artifact.javadoc"/>
 
   <!--
     - ======================================================================
@@ -718,6 +755,7 @@
   <target name="publish"
           depends="artifacts,tests,ivy.deliver"
           description="publish artifacts interactively">
+    <mvg:require-online/>
     <property name="publish.default.resolver" value="local"/>
     <input addproperty="publish.resolver"
            defaultvalue="${publish.default.resolver}"
@@ -813,7 +851,7 @@
 
   <!--
     - ======================================================================
-    - = Style checks
+    - = Custom modules
     - ======================================================================
     -->
 
