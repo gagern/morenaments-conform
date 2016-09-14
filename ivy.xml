@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module xmlns:doclink="http://martin.von-gagern.net/projects/ant/doclink"
+            xmlns:e="http://ant.apache.org/ivy/extra"
             version="2.0">
 
   <info organisation="de.morenaments" module="conformal">
@@ -115,7 +116,41 @@
                 rev="latest.integration"
                 changing="true"
                 conf="cdep;runtime"/>
-    <dependency org="jogl" name="jogl" rev="1.+" conf="cdep;optrun"/>
+    <!-- http://stackoverflow.com/q/24943065/1468366 -->
+    <dependency org="org.jogamp.jogl"
+                name="jogl-all"
+                rev="2.3+"
+                conf="cdep;optrun">
+      <artifact name="jogl-all"/>
+      <artifact name="jogl-all" e:classifier="natives-android-aarch64"/>
+      <artifact name="jogl-all" e:classifier="natives-android-armv6"/>
+      <artifact name="jogl-all" e:classifier="natives-linux-amd64"/>
+      <artifact name="jogl-all" e:classifier="natives-linux-armv6"/>
+      <artifact name="jogl-all" e:classifier="natives-linux-armv6hf"/>
+      <artifact name="jogl-all" e:classifier="natives-linux-i586"/>
+      <artifact name="jogl-all" e:classifier="natives-macosx-universal"/>
+      <artifact name="jogl-all" e:classifier="natives-solaris-amd64"/>
+      <artifact name="jogl-all" e:classifier="natives-solaris-i586"/>
+      <artifact name="jogl-all" e:classifier="natives-windows-amd64"/>
+      <artifact name="jogl-all" e:classifier="natives-windows-i586"/>
+    </dependency>
+    <dependency org="org.jogamp.gluegen"
+                name="gluegen-rt"
+                rev="2.3+"
+                conf="optrun">
+      <artifact name="gluegen-rt"/>
+      <artifact name="gluegen-rt" e:classifier="natives-android-aarch64"/>
+      <artifact name="gluegen-rt" e:classifier="natives-android-armv6"/>
+      <artifact name="gluegen-rt" e:classifier="natives-linux-amd64"/>
+      <artifact name="gluegen-rt" e:classifier="natives-linux-armv6"/>
+      <artifact name="gluegen-rt" e:classifier="natives-linux-armv6hf"/>
+      <artifact name="gluegen-rt" e:classifier="natives-linux-i586"/>
+      <artifact name="gluegen-rt" e:classifier="natives-macosx-universal"/>
+      <artifact name="gluegen-rt" e:classifier="natives-solaris-amd64"/>
+      <artifact name="gluegen-rt" e:classifier="natives-solaris-i586"/>
+      <artifact name="gluegen-rt" e:classifier="natives-windows-amd64"/>
+      <artifact name="gluegen-rt" e:classifier="natives-windows-i586"/>
+    </dependency>
     <dependency org="stax" name="stax" rev="1.2.0" conf="cdep;runtime"/>
     <dependency org="log4j"
                 name="log4j"

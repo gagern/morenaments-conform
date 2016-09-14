@@ -19,13 +19,15 @@
 
 package net.von_gagern.martin.morenaments.conformal;
 
-import javax.media.opengl.GL;
-import static javax.media.opengl.GL.*;
+import com.jogamp.opengl.GL2;
+import static com.jogamp.opengl.GL2.*;
 
 class ArbExtensionShaderInterface extends ShaderInterface {
 
-    public ArbExtensionShaderInterface(final GL gl) {
-        super(gl);
+    private final GL2 gl;
+
+    public ArbExtensionShaderInterface(final GL2 gl) {
+        this.gl = gl;
     }
 
     private int getParameteri(int object, int pname) {
@@ -35,7 +37,8 @@ class ArbExtensionShaderInterface extends ShaderInterface {
     }
 
     @Override public int createFragmentShader() {
-        return gl.glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+        // DANGER: possibly lossy cast of GLhandleARB to int
+        return (int)gl.glCreateShaderObjectARB(GL_FRAGMENT_SHADER);
     }
 
     @Override public void shaderSource(int shader, int count, String[] string) {
@@ -62,7 +65,8 @@ class ArbExtensionShaderInterface extends ShaderInterface {
     }
 
     @Override public int createProgram() {
-        return gl.glCreateProgramObjectARB();
+        // DANGER: possibly lossy cast of GLhandleARB to int
+        return (int)gl.glCreateProgramObjectARB();
     }
 
     @Override public void attachShader(int program, int shader) {

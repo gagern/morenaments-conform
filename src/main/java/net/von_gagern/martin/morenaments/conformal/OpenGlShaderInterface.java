@@ -19,13 +19,15 @@
 
 package net.von_gagern.martin.morenaments.conformal;
 
-import javax.media.opengl.GL;
-import static javax.media.opengl.GL.*;
+import com.jogamp.opengl.GL2ES2;
+import static com.jogamp.opengl.GL2ES2.*;
 
 class OpenGlShaderInterface extends ShaderInterface {
 
-    public OpenGlShaderInterface(final GL gl) {
-        super(gl);
+    private final GL2ES2 gl;
+
+    public OpenGlShaderInterface(final GL2ES2 gl) {
+        this.gl = gl;
     }
 
     private int getShaderParameteri(int shader, int pname) {

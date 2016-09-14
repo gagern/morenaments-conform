@@ -58,7 +58,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 
-import javax.media.opengl.GLCapabilities;
 import org.apache.log4j.Logger;
 
 import de.tum.in.gagern.hornamente.BusyFeedback;
@@ -411,7 +410,6 @@ public class GUI extends JDesktopPane {
         Group g = queryGroup(false);
         BufferedImage img = currentImageDisplay.getImage();
         JFrame frm = new JFrame("OpenGlRpl");
-        GLCapabilities capa = new GLCapabilities();
         OpenGlRpl ogrpl = new OpenGlRpl(img, g);
         frm.getContentPane().add(ogrpl.getComponent());
         frm.setSize(500, 500);

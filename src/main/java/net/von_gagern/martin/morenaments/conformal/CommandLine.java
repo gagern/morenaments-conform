@@ -31,7 +31,6 @@ import javax.imageio.ImageReader;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.FileImageInputStream;
 import javax.imageio.stream.ImageInputStream;
-import javax.media.opengl.GLCapabilities;
 import javax.swing.JFrame;
 import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.Node;
@@ -333,7 +332,6 @@ public class CommandLine {
             }
             Group g = Group.fromImageComment(comment);
             JFrame frm = new JFrame("OpenGlRpl");
-            GLCapabilities capa = new GLCapabilities();
             OpenGlRpl ogrpl = new OpenGlRpl(img, g);
             frm.getContentPane().add(ogrpl.getComponent());
             frm.setSize(500, 500);

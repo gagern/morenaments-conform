@@ -55,22 +55,24 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.media.opengl.DebugGL;
-import javax.media.opengl.GL;
-import javax.media.opengl.GLAutoDrawable;
-import javax.media.opengl.GLCanvas;
-import javax.media.opengl.GLEventListener;
-import javax.media.opengl.GLException;
 import javax.swing.Timer;
 import javax.swing.event.MouseInputListener;
 
 import org.apache.log4j.Logger;
+import com.jogamp.opengl.DebugGL2;
+import com.jogamp.opengl.GL;
+import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.GL2ES2;
+import com.jogamp.opengl.GLAutoDrawable;
+import com.jogamp.opengl.GLEventListener;
+import com.jogamp.opengl.GLException;
+import com.jogamp.opengl.awt.GLCanvas;
 
 import de.tum.in.gagern.hornamente.HypTrafo;
 import de.tum.in.gagern.hornamente.Vec2C;
 import net.von_gagern.martin.morenaments.conformal.groups.Group;
 
-import static javax.media.opengl.GL.*;
+import static com.jogamp.opengl.GL2.*;
 
 class OpenGlRpl implements GLEventListener,
                            MouseWheelListener, MouseInputListener
@@ -139,19 +141,26 @@ class OpenGlRpl implements GLEventListener,
     }
 
     private ShaderInterface getShaderInterface(GL gl) {
-        if (arbShader) return new ArbExtensionShaderInterface(gl);
-        else return new OpenGlShaderInterface(gl);
+        if (arbShader) return new ArbExtensionShaderInterface((GL2)gl);
+        else return new OpenGlShaderInterface((GL2ES2)gl);
     }
 
     public void init(GLAutoDrawable drawable) {
-        if (debug)
-            drawable.setGL(new DebugGL(drawable.getGL()));
         GL gl = drawable.getGL();
+        if (debug) {
+            if (gl instanceof GL2)
+                drawable.setGL(gl = new DebugGL2((GL2)gl));
+        }
         checkParams(gl);
         initDefaults(gl);
         initTexture(gl);
         ShaderInterface si = getShaderInterface(gl);
         initShader(si);
+    }
+
+    public void dispose(GLAutoDrawable drawable) {
+        GL gl = drawable.getGL();
+        // TODO: free resources
     }
 
     private boolean hasVersion(String str, int... required) {
@@ -439,7 +448,7 @@ class OpenGlRpl implements GLEventListener,
         GL gl = drawable.getGL();
         ShaderInterface si = getShaderInterface(gl);
         if (updateViewport || intendedZoomStep != currentZoomStep)
-            setupViewport(gl, si, cmp.getWidth(), cmp.getHeight());
+            setupViewport((GL2)gl, si, cmp.getWidth(), cmp.getHeight());
         if (currentDraft != intendedDraft)
             draftQuality(si, intendedDraft);
         if (intendedInitialTrafo != null) {
@@ -449,6 +458,10 @@ class OpenGlRpl implements GLEventListener,
         gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gl.glEnable(GL_TEXTURE_2D);
 
+        display((GL2)gl);
+    }
+
+    private void display(GL2 gl) {
         gl.glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
         gl.glBindTexture(GL_TEXTURE_2D, texName);
         gl.glBegin(GL_QUADS);
@@ -465,7 +478,7 @@ class OpenGlRpl implements GLEventListener,
                         int x, int y, int width, int height) {
         GL gl = drawable.getGL();
         useDraft = width*height > 512*512;
-        setupViewport(gl, getShaderInterface(gl), width, height);
+        setupViewport((GL2)gl, getShaderInterface(gl), width, height);
         triggerDraft();
     }
 
@@ -473,7 +486,7 @@ class OpenGlRpl implements GLEventListener,
         return Math.min(max, Math.max(min, val));
     }
 
-    private void setupViewport(GL gl, ShaderInterface si,
+    private void setupViewport(GL2 gl, ShaderInterface si,
                                int width, int height) {
         gl.glMatrixMode(GL_PROJECTION);
         gl.glLoadIdentity();
@@ -624,5 +637,16 @@ class OpenGlRpl implements GLEventListener,
         if (intendedZoomStep > 100) intendedZoomStep = 100;
         if (intendedZoomStep != currentZoomStep) triggerDraft();
     }
+
+    /*
+    private static final String[] glProfiles = {
+        GLProfile.GL2,
+    };
+
+    static GLCapabilities getCapabilities() {
+        GLProfile profile = GLProfile.get(glProfiles, true);
+        return new GLCapabilities(profile);
+    }
+    */
 
 }

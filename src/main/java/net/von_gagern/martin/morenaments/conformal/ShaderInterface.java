@@ -19,15 +19,9 @@
 
 package net.von_gagern.martin.morenaments.conformal;
 
-import javax.media.opengl.GL;
+import com.jogamp.opengl.GL;
 
 abstract class ShaderInterface {
-
-    protected final GL gl;
-
-    public ShaderInterface(final GL gl) {
-        this.gl = gl;
-    }
 
     public abstract int createFragmentShader();
 

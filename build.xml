@@ -192,7 +192,7 @@
     <property name="ivy.symlink" value="false"/>
     <mkdir dir="lib"/>
     <ivy:retrieve
-      pattern="lib/[conf]/[type]s/[organization]/[module]/[artifact].[ext]"
+      pattern="lib/[conf]/[type]s/[organization]/[module]/[artifact](-[classifier]).[ext]"
       ivypattern="lib/[conf]/[type]s/[organization]/[module].[ext]"
       symlink="${ivy.symlink}"/>
     <mkdir dir="${dir.target}"/>
