@@ -1,6 +1,8 @@
 ![morenaments logo](http://www.morenaments.de/images/logo100.png)
 
-# morenaments conform – conformal hyperbolization of ornaments
+# morenaments conform
+
+**Conformal hyperbolization of ornaments**
 
 This is very experimental software used by the author to demonstrate
 how conformal transformations can be used to transform Euclidean
@@ -37,7 +39,7 @@ To view a hyperbolized version of some Euclidean ornament,
 one would usually follow these steps:
 
 1. Launch application as described above.
-1. Use menu *File* item *Stat euc* to launch *morenaments euc* (an
+1. Use menu *File* item *Start euc* to launch *morenaments euc* (an
    ornament drawing program) in a separate window.
 1. In that new window, select *Recognize…* from the *File* menu.
 1. Select a file containing a sufficiently large portion of some
